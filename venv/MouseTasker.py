@@ -110,11 +110,12 @@ class WaitDialog(ActionDialog):
 class App:
     def __init__(self, root):
         self.root = root
+        self.root.title("MouseTasker")
         self.actions = []
 
         screen_width = root.winfo_screenwidth()
-        window_width = screen_width // 2
-        self.root.geometry(f"{window_width}x600")
+        window_width = screen_width // 3
+        self.root.geometry(f"{window_width}x500")
 
         self.setup_ui()
 

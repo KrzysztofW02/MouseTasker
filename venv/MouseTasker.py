@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import simpledialog, ttk
+from tkinter import simpledialog, ttk, messagebox
 import pyautogui
 import time
 
@@ -13,7 +13,7 @@ class MouseMove(MouseAction):
         self.y = y
 
     def execute(self):
-        pyautogui.moveTo(self.x, self.y) 
+        pyautogui.moveTo(self.x, self.y)
 
 class MouseClick(MouseAction):
     def execute(self):
@@ -34,26 +34,57 @@ class ActionDialog(simpledialog.Dialog):
         pass
 
 class MoveDialog(ActionDialog):
+    def __init__(self, master, x=0, y=0):
+        self.x_val = x
+        self.y_val = y
+        super().__init__(master)
+
     def body(self, master):
         tk.Label(master, text="X:").grid(row=0)
         tk.Label(master, text="Y:").grid(row=1)
 
         self.x = tk.Entry(master)
+        self.x.insert(0, str(self.x_val))
         self.y = tk.Entry(master)
+        self.y.insert(0, str(self.y_val))
 
         self.x.grid(row=0, column=1)
         self.y.grid(row=1, column=1)
 
     def apply(self):
-        x = int(self.x.get())
-        y = int(self.y.get())
-        self.result = MouseMove(x, y)  
+        try:
+            x = int(self.x.get())
+            y = int(self.y.get())
+            self.result = MouseMove(x, y)
+        except ValueError:
+            messagebox.showerror("Błąd", "Proszę wprowadzić poprawne wartości liczbowe.")
+
+class ClickDialog(ActionDialog):
+    def apply(self):
+        self.result = MouseClick()
+
+class WaitDialog(ActionDialog):
+    def __init__(self, master, time_value=0):
+        self.time_val = time_value
+        super().__init__(master)
+
+    def body(self, master):
+        tk.Label(master, text="Czas (s):").grid(row=0)
+        self.time_entry = tk.Entry(master)
+        self.time_entry.insert(0, str(self.time_val))
+        self.time_entry.grid(row=0, column=1)
+
+    def apply(self):
+        try:
+            time_value = float(self.time_entry.get())
+            self.result = Wait(time_value)
+        except ValueError:
+            messagebox.showerror("Błąd", "Proszę wprowadzić poprawny czas.")
 
 class App:
     def __init__(self, root):
         self.root = root
         self.actions = []
-
         self.setup_ui()
 
     def setup_ui(self):
@@ -64,6 +95,13 @@ class App:
         ttk.Button(self.frame, text="Add Click", command=self.add_click).pack()
         ttk.Button(self.frame, text="Add Wait", command=self.add_wait).pack()
         ttk.Button(self.frame, text="Run", command=self.run_actions).pack()
+        ttk.Button(self.frame, text="Zapisz", command=self.save_actions).pack()
+        ttk.Button(self.frame, text="Wczytaj", command=self.load_actions).pack()
+
+        self.edit_button = ttk.Button(self.frame, text="Edytuj", command=self.edit_action)
+        self.edit_button.pack()
+        self.delete_button = ttk.Button(self.frame, text="Usuń", command=self.delete_action)
+        self.delete_button.pack()
 
         self.actions_listbox = tk.Listbox(self.frame)
         self.actions_listbox.pack()
@@ -72,21 +110,74 @@ class App:
         dialog = MoveDialog(self.root)
         if dialog.result:
             self.actions.append(dialog.result)
-            self.actions_listbox.insert(tk.END, f"Move: {dialog.result.x}, {dialog.result.y}")  
+            self.actions_listbox.insert(tk.END, f"Move: {dialog.result.x}, {dialog.result.y}")
 
     def add_click(self):
-        self.actions.append(MouseClick())
-        self.actions_listbox.insert(tk.END, "Click")
+        dialog = ClickDialog(self.root)
+        if dialog.result:
+            self.actions.append(dialog.result)
+            self.actions_listbox.insert(tk.END, "Click")
 
     def add_wait(self):
-        time = simpledialog.askfloat("Wait", "Time:")
-        if time:
-            self.actions.append(Wait(time))
-            self.actions_listbox.insert(tk.END, f"Wait: {time}s")
+        dialog = WaitDialog(self.root)
+        if dialog.result:
+            self.actions.append(dialog.result)
+            self.actions_listbox.insert(tk.END, f"Wait: {dialog.result.time}s")
+
+    def edit_action(self):
+        selected_index = self.actions_listbox.curselection()
+        if selected_index:
+            action = self.actions[selected_index[0]]
+            if isinstance(action, MouseMove):
+                dialog = MoveDialog(self.root, action.x, action.y)
+                if dialog.result:
+                    self.actions[selected_index[0]] = dialog.result
+                    self.actions_listbox.delete(selected_index[0])
+                    self.actions_listbox.insert(selected_index[0], f"Move: {dialog.result.x}, {dialog.result.y}")
+            elif isinstance(action, Wait):
+                dialog = WaitDialog(self.root, action.time)
+                if dialog.result:
+                    self.actions[selected_index[0]] = dialog.result
+                    self.actions_listbox.delete(selected_index[0])
+                    self.actions_listbox.insert(selected_index[0], f"Wait: {dialog.result.time}s")
+
+    def delete_action(self):
+        selected_index = self.actions_listbox.curselection()
+        if selected_index:
+            self.actions.pop(selected_index[0])
+            self.actions_listbox.delete(selected_index[0])
 
     def run_actions(self):
         for action in self.actions:
             action.execute()
+
+    def save_actions(self):
+        with open('actions.txt', 'w') as file:
+            for action in self.actions:
+                if isinstance(action, MouseMove):
+                    file.write(f"Move,{action.x},{action.y}\n")
+                elif isinstance(action, MouseClick):
+                    file.write("Click\n")
+                elif isinstance(action, Wait):
+                    file.write(f"Wait,{action.time}\n")
+
+    def load_actions(self):
+        self.actions.clear()
+        self.actions_listbox.delete(0, tk.END)
+        try:
+            with open('actions.txt', 'r') as file:
+                for line in file:
+                    parts = line.strip().split(',')
+                    if parts[0] == "Move":
+                        action = MouseMove(int(parts[1]), int(parts[2]))
+                    elif parts[0] == "Click":
+                        action = MouseClick()
+                    elif parts[0] == "Wait":
+                        action = Wait(float(parts[1]))
+                    self.actions.append(action)
+                    self.actions_listbox.insert(tk.END, line.strip())
+        except FileNotFoundError:
+            messagebox.showerror("Błąd", "Plik nie istnieje.")
 
 if __name__ == "__main__":
     root = tk.Tk()

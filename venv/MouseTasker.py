@@ -20,11 +20,11 @@ class MouseClick(MouseAction):
         pyautogui.click()
 
 class Wait(MouseAction):
-    def __init__(self, duration):
-        self.duration = duration
+    def __init__(self, time):
+        self.time = time
 
     def execute(self):
-        time.sleep(self.duration)
+        time.sleep(self.time)
 
 class ActionDialog(simpledialog.Dialog):
     def body(self, master):
@@ -47,7 +47,7 @@ class MoveDialog(ActionDialog):
     def apply(self):
         x = int(self.x.get())
         y = int(self.y.get())
-        self.result = MouseMove(x, y)  # Removed duration
+        self.result = MouseMove(x, y)  
 
 class App:
     def __init__(self, root):
@@ -72,17 +72,17 @@ class App:
         dialog = MoveDialog(self.root)
         if dialog.result:
             self.actions.append(dialog.result)
-            self.actions_listbox.insert(tk.END, f"Move: {dialog.result.x}, {dialog.result.y}")  # Removed duration display
+            self.actions_listbox.insert(tk.END, f"Move: {dialog.result.x}, {dialog.result.y}")  
 
     def add_click(self):
         self.actions.append(MouseClick())
         self.actions_listbox.insert(tk.END, "Click")
 
     def add_wait(self):
-        duration = simpledialog.askfloat("Wait", "Duration:")
-        if duration:
-            self.actions.append(Wait(duration))
-            self.actions_listbox.insert(tk.END, f"Wait: {duration}s")
+        time = simpledialog.askfloat("Wait", "Time:")
+        if time:
+            self.actions.append(Wait(time))
+            self.actions_listbox.insert(tk.END, f"Wait: {time}s")
 
     def run_actions(self):
         for action in self.actions:

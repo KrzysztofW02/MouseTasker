@@ -7,7 +7,7 @@ class MouseAction:
     def execute(self):
         pass
 
-class MouseMove(MouseAction):
+class MouseMove(MouseAction): #normal move without click
     def __init__(self, x, y):
         self.x = x
         self.y = y
@@ -15,7 +15,7 @@ class MouseMove(MouseAction):
     def execute(self):
         pyautogui.moveTo(self.x, self.y)
 
-class MouseClick(MouseAction):
+class MouseClick(MouseAction): #click on specyfic position
     def __init__(self, x, y):
         self.x = x
         self.y = y
@@ -23,14 +23,14 @@ class MouseClick(MouseAction):
     def execute(self):
         pyautogui.click(self.x, self.y)
 
-class Wait(MouseAction):
+class Wait(MouseAction): #wait for specyfic secounds
     def __init__(self, time):
         self.time = time
 
     def execute(self):
         time.sleep(self.time)
 
-class ActionDialog(simpledialog.Dialog):
+class ActionDialog(simpledialog.Dialog): #dialog for adding new action
     def body(self, master):
         pass
 
@@ -111,26 +111,56 @@ class App:
     def __init__(self, root):
         self.root = root
         self.actions = []
+
+        screen_width = root.winfo_screenwidth()
+        window_width = screen_width // 2
+        self.root.geometry(f"{window_width}x600")
+
         self.setup_ui()
 
     def setup_ui(self):
-        self.frame = ttk.Frame(self.root)
-        self.frame.pack(padx=10, pady=10)
+        self.style = ttk.Style()
+        self.style.configure("TButton",
+                            font=("Helvetica", 12),
+                            padding=10,
+                            background="#323232",
+                            foreground="white")
+        self.style.map("TButton",
+                    background=[('active', '#323232')],
+                    foreground=[('active', 'white')])
 
-        ttk.Button(self.frame, text="Add Move", command=self.add_move).pack()
-        ttk.Button(self.frame, text="Add Click", command=self.add_click).pack()
-        ttk.Button(self.frame, text="Add Wait", command=self.add_wait).pack()
-        ttk.Button(self.frame, text="Run", command=self.run_actions).pack()
-        ttk.Button(self.frame, text="Zapisz", command=self.save_actions).pack()
-        ttk.Button(self.frame, text="Wczytaj", command=self.load_actions).pack()
+        self.frame = tk.Frame(self.root)
+        self.frame.pack( fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        self.edit_button = ttk.Button(self.frame, text="Edytuj", command=self.edit_action)
-        self.edit_button.pack()
-        self.delete_button = ttk.Button(self.frame, text="Usuń", command=self.delete_action)
-        self.delete_button.pack()
+        button_frame_top = ttk.Frame(self.frame)
+        button_frame_top.pack(fill=tk.X, expand=False)
 
-        self.actions_listbox = tk.Listbox(self.frame)
-        self.actions_listbox.pack()
+        # Center the buttons in the top frame
+        top_buttons = ttk.Frame(button_frame_top)
+        top_buttons.pack(side=tk.TOP, pady=10)
+
+        ttk.Button(top_buttons, text="Add Move", command=self.add_move, style="TButton").pack(side=tk.LEFT, padx=5)
+        ttk.Button(top_buttons, text="Add Click", command=self.add_click, style="TButton").pack(side=tk.LEFT, padx=5)
+        ttk.Button(top_buttons, text="Add Wait", command=self.add_wait, style="TButton").pack(side=tk.LEFT, padx=5)
+        ttk.Button(top_buttons, text="Run", command=self.run_actions, style="TButton").pack(side=tk.LEFT, padx=5)
+
+        button_frame_bottom = ttk.Frame(self.frame)
+        button_frame_bottom.pack(fill=tk.X, expand=False)
+
+        # Center the buttons in the bottom frame
+        bottom_buttons = ttk.Frame(button_frame_bottom)
+        bottom_buttons.pack(side=tk.TOP, pady=10)
+
+        ttk.Button(bottom_buttons, text="Save", command=self.save_actions, style="TButton").pack(side=tk.LEFT, padx=5)
+        ttk.Button(bottom_buttons, text="Load", command=self.load_actions, style="TButton").pack(side=tk.LEFT, padx=5)
+        self.edit_button = ttk.Button(bottom_buttons, text="Edit", command=self.edit_action, style="TButton")
+        self.edit_button.pack(side=tk.LEFT, padx=5)
+        self.delete_button = ttk.Button(bottom_buttons, text="Delete", command=self.delete_action, style="TButton")
+        self.delete_button.pack(side=tk.LEFT, padx=5)
+
+        self.actions_listbox = tk.Listbox(self.frame, height=15, width=50)
+        self.actions_listbox.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
 
     def add_move(self):
         dialog = MoveDialog(self.root)

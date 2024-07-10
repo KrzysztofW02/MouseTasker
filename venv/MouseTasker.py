@@ -16,8 +16,12 @@ class MouseMove(MouseAction):
         pyautogui.moveTo(self.x, self.y)
 
 class MouseClick(MouseAction):
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
     def execute(self):
-        pyautogui.click()
+        pyautogui.click(self.x, self.y)
 
 class Wait(MouseAction):
     def __init__(self, time):
@@ -60,8 +64,30 @@ class MoveDialog(ActionDialog):
             messagebox.showerror("Błąd", "Proszę wprowadzić poprawne wartości liczbowe.")
 
 class ClickDialog(ActionDialog):
+    def __init__(self, master, x=0, y=0):
+        self.x_val = x
+        self.y_val = y
+        super().__init__(master)
+
+    def body(self, master):
+        tk.Label(master, text="X:").grid(row=0)
+        tk.Label(master, text="Y:").grid(row=1)
+
+        self.x = tk.Entry(master)
+        self.x.insert(0, str(self.x_val))
+        self.y = tk.Entry(master)
+        self.y.insert(0, str(self.y_val))
+
+        self.x.grid(row=0, column=1)
+        self.y.grid(row=1, column=1)
+
     def apply(self):
-        self.result = MouseClick()
+        try:
+            x = int(self.x.get())
+            y = int(self.y.get())
+            self.result = MouseClick(x, y)
+        except ValueError:
+            messagebox.showerror("Błąd", "Proszę wprowadzić poprawne wartości liczbowe.")
 
 class WaitDialog(ActionDialog):
     def __init__(self, master, time_value=0):
@@ -116,7 +142,7 @@ class App:
         dialog = ClickDialog(self.root)
         if dialog.result:
             self.actions.append(dialog.result)
-            self.actions_listbox.insert(tk.END, "Click")
+            self.actions_listbox.insert(tk.END, f"Click: {dialog.result.x}, {dialog.result.y}")
 
     def add_wait(self):
         dialog = WaitDialog(self.root)
@@ -134,6 +160,12 @@ class App:
                     self.actions[selected_index[0]] = dialog.result
                     self.actions_listbox.delete(selected_index[0])
                     self.actions_listbox.insert(selected_index[0], f"Move: {dialog.result.x}, {dialog.result.y}")
+            elif isinstance(action, MouseClick):
+                dialog = ClickDialog(self.root, action.x, action.y)
+                if dialog.result:
+                    self.actions[selected_index[0]] = dialog.result
+                    self.actions_listbox.delete(selected_index[0])
+                    self.actions_listbox.insert(selected_index[0], f"Click: {dialog.result.x}, {dialog.result.y}")
             elif isinstance(action, Wait):
                 dialog = WaitDialog(self.root, action.time)
                 if dialog.result:
@@ -157,7 +189,7 @@ class App:
                 if isinstance(action, MouseMove):
                     file.write(f"Move,{action.x},{action.y}\n")
                 elif isinstance(action, MouseClick):
-                    file.write("Click\n")
+                    file.write(f"Click,{action.x},{action.y}\n")
                 elif isinstance(action, Wait):
                     file.write(f"Wait,{action.time}\n")
 
@@ -171,7 +203,7 @@ class App:
                     if parts[0] == "Move":
                         action = MouseMove(int(parts[1]), int(parts[2]))
                     elif parts[0] == "Click":
-                        action = MouseClick()
+                        action = MouseClick(int(parts[1]), int(parts[2]))
                     elif parts[0] == "Wait":
                         action = Wait(float(parts[1]))
                     self.actions.append(action)

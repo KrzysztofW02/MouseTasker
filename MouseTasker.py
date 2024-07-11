@@ -164,6 +164,7 @@ class App:
         ttk.Button(top_buttons, text="Add Wait", command=self.add_wait, style="TButton").pack(side=tk.LEFT, padx=5)
         ttk.Button(top_buttons, text="Run", command=self.run_actions, style="TButton").pack(side=tk.LEFT, padx=5)
         ttk.Button(top_buttons, text="Check Coordinates", command=self.check_coordinates, style="TButton").pack(side=tk.LEFT, padx=5)
+        
 
         button_frame_bottom = ttk.Frame(self.frame)
         button_frame_bottom.pack(fill=tk.X, expand=False)
@@ -177,6 +178,8 @@ class App:
         self.edit_button.pack(side=tk.LEFT, padx=5)
         self.delete_button = ttk.Button(bottom_buttons, text="Delete", command=self.delete_action, style="TButton")
         self.delete_button.pack(side=tk.LEFT, padx=5)
+        ttk.Button(bottom_buttons, text="Help", command=self.show_shortcuts, style="TButton").pack(side=tk.LEFT, padx=5)
+
 
         self.actions_listbox = tk.Listbox(self.frame, height=15, width=50)
         self.actions_listbox.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
@@ -310,7 +313,7 @@ class App:
         self.running = False
     
     def show_shortcuts(self, event=None):
-        messagebox.showinfo("Shortcuts", "Shortcuts:\n- Copy: Ctrl+C\n- Paste: Ctrl+V\n- Undo: Ctrl+Z\n- Save: Ctrl+S\n - Select All: Ctrl+A\n- Delete: Delete\n- Check Coordinates: F1\n- Run: F2\n -Stop: F3\n - Show Shortcuts: F5")
+        messagebox.showinfo("Shortcuts", "Shortcuts:\n- Copy: Ctrl+C\n- Paste: Ctrl+V\n- Undo: Ctrl+Z\n- Save: Ctrl+S\n- Select All: Ctrl+A\n- Delete: Delete\n- Check Coordinates: C\n- Run: F1\n- Stop: F2\n- Show Shortcuts: F5")
 
     def copy_action(self, event=None):
         selected_index = self.actions_listbox.curselection()

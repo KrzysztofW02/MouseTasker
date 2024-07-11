@@ -41,6 +41,19 @@ class Wait(MouseAction): # wait for specific seconds
     def execute(self):
         time.sleep(self.time)
 
+class MouseMoveCLick(MouseAction):
+    def __init__(self, x, y, time):
+        self.x = x
+        self.y = y
+        self.time = time
+
+    def __str__(self):
+       return f"MoveClick: {self.x}, {self.y}, {self.time}"
+
+    def execute(self):
+        pyautogui.moveTo(self.x, self.y, self.time)
+        pyautogui.click()
+
 class ActionDialog(simpledialog.Dialog):
     def body(self, master):
         pass
@@ -124,6 +137,40 @@ class WaitDialog(ActionDialog):
         except ValueError:
             messagebox.showerror("Błąd", "Proszę wprowadzić poprawny czas.")
 
+class MoveClickDialog(ActionDialog):
+    def __init__(self, master, x=0, y=0, time=1):
+        self.x_val = x
+        self.y_val = y
+        self.wait_val = time
+        super().__init__(master)
+
+    def body(self, master):
+        tk.Label(master, text="X:").grid(row=0)
+        tk.Label(master, text="Y:").grid(row=1)
+        tk.Label(master, text="Time (s):").grid(row=2)
+
+        self.x = tk.Entry(master)
+        self.x.insert(0, str(self.x_val))
+        self.y = tk.Entry(master)
+        self.y.insert(0, str(self.y_val))
+        self.time = tk.Entry(master)
+        self.time.insert(0, str(self.wait_val))
+
+        self.x.grid(row=0, column=1)
+        self.y.grid(row=1, column=1)
+        self.time.grid(row=2, column=1)
+
+    def apply(self):
+        try:
+            x = int(self.x.get())
+            y = int(self.y.get())
+            time = float(self.time.get())
+            self.result = MouseMoveCLick(x, y, time)
+        except ValueError:
+            messagebox.showerror("Error", "Please enter valid numerical values.")
+
+    
+
 class App:
     def __init__(self, root):
         self.root = root
@@ -164,11 +211,13 @@ class App:
         top_buttons = ttk.Frame(button_frame_top)
         top_buttons.pack(side=tk.TOP, pady=10)
 
+        ttk.Button(top_buttons, text="Add MoveClick", command=self.add_move_click, style="TButton").pack(side=tk.LEFT, padx=5)
         ttk.Button(top_buttons, text="Add Move", command=self.add_move, style="TButton").pack(side=tk.LEFT, padx=5)
         ttk.Button(top_buttons, text="Add Click", command=self.add_click, style="TButton").pack(side=tk.LEFT, padx=5)
         ttk.Button(top_buttons, text="Add Wait", command=self.add_wait, style="TButton").pack(side=tk.LEFT, padx=5)
         ttk.Button(top_buttons, text="Run", command=self.run_actions, style="TButton").pack(side=tk.LEFT, padx=5)
         ttk.Button(top_buttons, text="Check Coordinates", command=self.check_coordinates, style="TButton").pack(side=tk.LEFT, padx=5)
+        
         
 
         button_frame_bottom = ttk.Frame(self.frame)
@@ -204,24 +253,22 @@ class App:
         self.root.bind('<Control-v>', self.paste_action)
         self.root.bind('<Control-z>', self.undo_action)
 
+    #Menu bar
     def create_menu(self):
         menu_bar = tk.Menu(self.root)
         self.root.config(menu=menu_bar)
 
-        # File menu
         file_menu = tk.Menu(menu_bar, tearoff=0)
         file_menu.add_command(label="Save", command=self.save_actions)
         file_menu.add_command(label="Load", command=self.load_actions)
         menu_bar.add_cascade(label="File", menu=file_menu)
 
-        # Edit menu
         edit_menu = tk.Menu(menu_bar, tearoff=0)
         edit_menu.add_command(label="Undo", command=self.undo_action)
         edit_menu.add_command(label="Copy", command=self.copy_action)
         edit_menu.add_command(label="Paste", command=self.paste_action)
         menu_bar.add_cascade(label="Edit", menu=edit_menu)
 
-        # Help menu
         help_menu = tk.Menu(menu_bar, tearoff=0)
         help_menu.add_command(label="Shortcuts", command=self.show_shortcuts)
         menu_bar.add_cascade(label="Help", menu=help_menu)
@@ -261,6 +308,19 @@ class App:
             self.actions.insert(insert_position, dialog.result)
             self.actions_listbox.insert(insert_position, f"Wait: {dialog.result.time}s")
             self.update_actions_history()
+    
+    def add_move_click(self):
+        dialog = MoveClickDialog(self.root)
+        if dialog.result:
+            selected_index = self.actions_listbox.curselection()
+            if selected_index:
+                insert_position = selected_index[0] + 1
+            else:
+                insert_position = len(self.actions)
+            self.actions.insert(insert_position, dialog.result)
+            self.actions_listbox.insert(insert_position, f"MoveClick: {dialog.result.x}, {dialog.result.y}, {dialog.result.time}")
+            self.update_actions_history()
+
 
     def edit_action(self, event=None):
         selected_index = self.actions_listbox.curselection()
@@ -284,6 +344,12 @@ class App:
                     self.actions[selected_index[0]] = dialog.result
                     self.actions_listbox.delete(selected_index[0])
                     self.actions_listbox.insert(selected_index[0], f"Wait: {dialog.result.time}s")
+            elif isinstance(action, MouseMoveCLick):
+                dialog = MoveClickDialog(self.root, action.x, action.y, action.time)
+                if dialog.result:
+                    self.actions[selected_index[0]] = dialog.result
+                    self.actions_listbox.delete(selected_index[0])
+                    self.actions_listbox.insert(selected_index[0], f"MoveClick: {dialog.result.x}, {dialog.result.y}, {dialog.result.time}")
 
     def delete_action(self, event=None):
         selected_indices = self.actions_listbox.curselection()
@@ -426,6 +492,7 @@ class App:
         ttk.Button(button_frame, text="Add Move", command=add_move_action, style="TButton").pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Add Click", command=add_click_action, style="TButton").pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Close", command=coord_window.destroy, style="TButton").pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Add Move Click", command=self.add_move_click, style="TButton").pack(side=tk.LEFT, padx=5)
 
 if __name__ == "__main__":
     root = ThemedTk(theme="radiance")

@@ -4,6 +4,8 @@ import pyautogui
 import time
 import copy
 from threading import Thread
+from ttkthemes import ThemedTk
+import tkinter.ttk as ttk
 
 class MouseAction:
     def execute(self):
@@ -125,6 +127,8 @@ class WaitDialog(ActionDialog):
 class App:
     def __init__(self, root):
         self.root = root
+        self.root.set_theme("radiance")
+
         self.root.title("MouseTasker")
         self.actions = []
 
@@ -138,22 +142,28 @@ class App:
         self.update_actions_history()
 
         screen_width = root.winfo_screenwidth()
-        window_width = screen_width // 3
+        window_width = screen_width // 2
         self.root.geometry(f"{window_width}x500")
 
         self.setup_ui()
 
+    def refresh_ui(self):
+        for widget in self.root.winfo_children():
+            widget.destroy()
+        self.setup_ui()
+
     def setup_ui(self):
         self.style = ttk.Style()
-        self.style.configure("TButton",
-                            font=("Helvetica", 12),
-                            padding=10,
-                            background="#323232",
-                            foreground="white")
-        self.style.map("TButton",
-                    background=[('active', '#323232')],
-                    foreground=[('active', 'white')])
+        #self.style.theme_use("arc")
+        #self.style.configure("TButton",
+        #                    font=("Helvetica", 12),
+        #                    padding=10,
+        #                   foreground="white")
+        #self.style.map("TButton",
+         #           background=[('active', '#323232')],
+          #          foreground=[('active', 'white')])
 
+        #print(self.style.theme_names())
         self.frame = tk.Frame(self.root)
         self.frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
@@ -404,6 +414,7 @@ class App:
         ttk.Button(button_frame, text="Close", command=coord_window.destroy, style="TButton").pack(side=tk.LEFT, padx=5)
 
 if __name__ == "__main__":
-    root = tk.Tk()
+    root = ThemedTk(theme="radiance")
+    root.set_theme("radiance", themebg=True)
     app = App(root)
     root.mainloop()

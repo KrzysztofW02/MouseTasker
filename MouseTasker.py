@@ -133,7 +133,7 @@ class ClickDialog(ActionDialog):
             messagebox.showerror("Błąd", "Proszę wprowadzić poprawne wartości liczbowe.")
 
 class WaitDialog(ActionDialog):
-    def __init__(self, master, time_value=0):
+    def __init__(self, master, time_value=1):
         self.time_val = time_value
         super().__init__(master)
 

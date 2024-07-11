@@ -49,7 +49,7 @@ class ActionDialog(simpledialog.Dialog):
         pass
 
 class MoveDialog(ActionDialog):
-    def __init__(self, master, x=0, y=0, time=0):
+    def __init__(self, master, x=0, y=0, time=1):
         self.x_val = x
         self.y_val = y
         self.wait_val = time
@@ -146,6 +146,7 @@ class App:
         self.root.geometry(f"{window_width}x500")
 
         self.setup_ui()
+        self.create_menu()
 
     def refresh_ui(self):
         for widget in self.root.winfo_children():
@@ -154,16 +155,6 @@ class App:
 
     def setup_ui(self):
         self.style = ttk.Style()
-        #self.style.theme_use("arc")
-        #self.style.configure("TButton",
-        #                    font=("Helvetica", 12),
-        #                    padding=10,
-        #                   foreground="white")
-        #self.style.map("TButton",
-         #           background=[('active', '#323232')],
-          #          foreground=[('active', 'white')])
-
-        #print(self.style.theme_names())
         self.frame = tk.Frame(self.root)
         self.frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
@@ -196,7 +187,8 @@ class App:
 
 
         self.actions_listbox = tk.Listbox(self.frame, height=15, width=50)
-        self.actions_listbox.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        self.actions_listbox.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
+        self.actions_listbox.config(bg="white", fg="black", borderwidth=0, highlightthickness=0, highlightbackground="#31363b", highlightcolor="#31363b")
 
         #Bindings keys
         self.actions_listbox.bind('<Double-1>', self.edit_action)
@@ -211,6 +203,28 @@ class App:
         self.root.bind('<Control-c>', self.copy_action)
         self.root.bind('<Control-v>', self.paste_action)
         self.root.bind('<Control-z>', self.undo_action)
+
+    def create_menu(self):
+        menu_bar = tk.Menu(self.root)
+        self.root.config(menu=menu_bar)
+
+        # File menu
+        file_menu = tk.Menu(menu_bar, tearoff=0)
+        file_menu.add_command(label="Save", command=self.save_actions)
+        file_menu.add_command(label="Load", command=self.load_actions)
+        menu_bar.add_cascade(label="File", menu=file_menu)
+
+        # Edit menu
+        edit_menu = tk.Menu(menu_bar, tearoff=0)
+        edit_menu.add_command(label="Undo", command=self.undo_action)
+        edit_menu.add_command(label="Copy", command=self.copy_action)
+        edit_menu.add_command(label="Paste", command=self.paste_action)
+        menu_bar.add_cascade(label="Edit", menu=edit_menu)
+
+        # Help menu
+        help_menu = tk.Menu(menu_bar, tearoff=0)
+        help_menu.add_command(label="Shortcuts", command=self.show_shortcuts)
+        menu_bar.add_cascade(label="Help", menu=help_menu)
 
     def add_move(self):
         dialog = MoveDialog(self.root)
@@ -398,7 +412,7 @@ class App:
         button_frame.pack(pady=10)
 
         def add_move_action():
-            move_action = MouseMove(x, y, 0)
+            move_action = MouseMove(x, y, 1) ####### default time is 1 second instead of 0 @@@@@@@@@
             self.actions.append(move_action)
             self.actions_listbox.insert(tk.END, f"Move: {move_action.x}, {move_action.y}, {move_action.time}")
             coord_window.destroy()

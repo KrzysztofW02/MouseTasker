@@ -3,6 +3,7 @@ from tkinter import simpledialog, ttk, messagebox, Toplevel, filedialog
 import pyautogui
 import time
 import copy
+from threading import Thread
 
 class MouseAction:
     def execute(self):
@@ -128,6 +129,9 @@ class App:
         self.actions = []
 
         self.running = False
+        self.current_action_index = 0
+        self.action_thread = None
+
         self.copied_action = None
         self.actions_history = []
 
@@ -184,6 +188,7 @@ class App:
         self.actions_listbox = tk.Listbox(self.frame, height=15, width=50)
         self.actions_listbox.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
+        #Bindings keys
         self.actions_listbox.bind('<Double-1>', self.edit_action)
         self.root.bind('<c>', self.check_coordinates)
         self.root.bind('<Delete>', self.delete_action)
@@ -265,12 +270,26 @@ class App:
             self.actions_listbox.delete(index)
 
     def run_actions(self, event=None):
+        if self.running:
+            messagebox.showinfo("Info", "Already running actions.")
+            return
+        
         self.running = True
-        for action in self.actions:
-            if not self.running:
-                break
+        self.current_action_index = 0
+        
+        # Start actions in a separate thread to allow to stop actions
+        self.action_thread = Thread(target=self.execute_actions)
+        self.action_thread.start()
+
+    def execute_actions(self):
+        while self.running and self.current_action_index < len(self.actions):
+            action = self.actions[self.current_action_index]
             action.execute()
+            self.current_action_index += 1
+
+        # Reset after actions are finished
         self.running = False
+        self.action_thread = None
 
     def save_actions(self):
         filepath = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")])
@@ -310,7 +329,15 @@ class App:
         self.actions_listbox.select_set(0, tk.END)
 
     def stop_actions(self, event=None):
+        if not self.running:
+            messagebox.showinfo("Info", "No actions currently running.")
+            return
+        
         self.running = False
+        if self.action_thread and self.action_thread.is_alive():
+            self.action_thread.join()  # Wait for thread to finish
+
+        messagebox.showinfo("Info", "Actions stopped.")
     
     def show_shortcuts(self, event=None):
         messagebox.showinfo("Shortcuts", "Shortcuts:\n- Copy: Ctrl+C\n- Paste: Ctrl+V\n- Undo: Ctrl+Z\n- Save: Ctrl+S\n- Select All: Ctrl+A\n- Delete: Delete\n- Check Coordinates: C\n- Run: F1\n- Stop: F2\n- Show Shortcuts: F5")

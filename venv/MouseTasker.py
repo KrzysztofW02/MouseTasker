@@ -8,12 +8,13 @@ class MouseAction:
         pass
 
 class MouseMove(MouseAction): #normal move without click
-    def __init__(self, x, y):
+    def __init__(self, x, y, time):
         self.x = x
         self.y = y
+        self.time = time
 
     def execute(self):
-        pyautogui.moveTo(self.x, self.y)
+        pyautogui.moveTo(self.x, self.y, self.time)
 
 class MouseClick(MouseAction): #click on specyfic position
     def __init__(self, x, y):
@@ -30,7 +31,7 @@ class Wait(MouseAction): #wait for specyfic secounds
     def execute(self):
         time.sleep(self.time)
 
-class ActionDialog(simpledialog.Dialog): #dialog for adding new action
+class ActionDialog(simpledialog.Dialog):
     def body(self, master):
         pass
 
@@ -38,28 +39,34 @@ class ActionDialog(simpledialog.Dialog): #dialog for adding new action
         pass
 
 class MoveDialog(ActionDialog):
-    def __init__(self, master, x=0, y=0):
+    def __init__(self, master, x=0, y=0, time=0):
         self.x_val = x
         self.y_val = y
+        self.wait_val = time
         super().__init__(master)
 
     def body(self, master):
         tk.Label(master, text="X:").grid(row=0)
         tk.Label(master, text="Y:").grid(row=1)
+        tk.Label(master, text="Czas (s):").grid(row=2)
 
         self.x = tk.Entry(master)
         self.x.insert(0, str(self.x_val))
         self.y = tk.Entry(master)
         self.y.insert(0, str(self.y_val))
+        self.time = tk.Entry(master)
+        self.time.insert(0, str(self.wait_val))
 
         self.x.grid(row=0, column=1)
         self.y.grid(row=1, column=1)
+        self.time.grid(row=2, column=1)
 
     def apply(self):
         try:
             x = int(self.x.get())
             y = int(self.y.get())
-            self.result = MouseMove(x, y)
+            time = float(self.time.get())
+            self.result = MouseMove(x, y, time)
         except ValueError:
             messagebox.showerror("Błąd", "Proszę wprowadzić poprawne wartości liczbowe.")
 
@@ -136,7 +143,6 @@ class App:
         button_frame_top = ttk.Frame(self.frame)
         button_frame_top.pack(fill=tk.X, expand=False)
 
-        # Center the buttons in the top frame
         top_buttons = ttk.Frame(button_frame_top)
         top_buttons.pack(side=tk.TOP, pady=10)
 
@@ -148,7 +154,6 @@ class App:
         button_frame_bottom = ttk.Frame(self.frame)
         button_frame_bottom.pack(fill=tk.X, expand=False)
 
-        # Center the buttons in the bottom frame
         bottom_buttons = ttk.Frame(button_frame_bottom)
         bottom_buttons.pack(side=tk.TOP, pady=10)
 
@@ -167,7 +172,7 @@ class App:
         dialog = MoveDialog(self.root)
         if dialog.result:
             self.actions.append(dialog.result)
-            self.actions_listbox.insert(tk.END, f"Move: {dialog.result.x}, {dialog.result.y}")
+            self.actions_listbox.insert(tk.END, f"Move: {dialog.result.x}, {dialog.result.y}, {dialog.result.time}")
 
     def add_click(self):
         dialog = ClickDialog(self.root)
@@ -186,11 +191,11 @@ class App:
         if selected_index:
             action = self.actions[selected_index[0]]
             if isinstance(action, MouseMove):
-                dialog = MoveDialog(self.root, action.x, action.y)
+                dialog = MoveDialog(self.root, action.x, action.y, action.time)
                 if dialog.result:
                     self.actions[selected_index[0]] = dialog.result
                     self.actions_listbox.delete(selected_index[0])
-                    self.actions_listbox.insert(selected_index[0], f"Move: {dialog.result.x}, {dialog.result.y}")
+                    self.actions_listbox.insert(selected_index[0], f"Move: {dialog.result.x}, {dialog.result.y}, {dialog.result.time}")
             elif isinstance(action, MouseClick):
                 dialog = ClickDialog(self.root, action.x, action.y)
                 if dialog.result:
@@ -218,7 +223,7 @@ class App:
         with open('actions.txt', 'w') as file:
             for action in self.actions:
                 if isinstance(action, MouseMove):
-                    file.write(f"Move,{action.x},{action.y}\n")
+                    file.write(f"Move,{action.x},{action.y},{action.wait}\n")
                 elif isinstance(action, MouseClick):
                     file.write(f"Click,{action.x},{action.y}\n")
                 elif isinstance(action, Wait):
@@ -232,7 +237,7 @@ class App:
                 for line in file:
                     parts = line.strip().split(',')
                     if parts[0] == "Move":
-                        action = MouseMove(int(parts[1]), int(parts[2]))
+                        action = MouseMove(int(parts[1]), int(parts[2]), float(parts[3]))
                     elif parts[0] == "Click":
                         action = MouseClick(int(parts[1]), int(parts[2]))
                     elif parts[0] == "Wait":

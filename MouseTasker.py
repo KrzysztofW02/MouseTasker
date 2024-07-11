@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import simpledialog, ttk, messagebox, Toplevel
+from tkinter import simpledialog, ttk, messagebox, Toplevel, filedialog
 import pyautogui
 import time
 
@@ -224,7 +224,10 @@ class App:
             action.execute()
 
     def save_actions(self):
-        with open('actions.txt', 'w') as file:
+        filepath = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")])
+        if not filepath:  # If the user cancels the dialog, filepath will be None or ''.
+            return
+        with open(filepath, 'w') as file:
             for action in self.actions:
                 if isinstance(action, MouseMove):
                     file.write(f"Move,{action.x},{action.y},{action.time}\n")
@@ -234,10 +237,13 @@ class App:
                     file.write(f"Wait,{action.time}\n")
 
     def load_actions(self):
+        filepath = filedialog.askopenfilename(filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")])
+        if not filepath:  # If the user cancels the dialog, filepath will be None or ''.
+            return
         self.actions.clear()
         self.actions_listbox.delete(0, tk.END)
         try:
-            with open('actions.txt', 'r') as file:
+            with open(filepath, 'r') as file:
                 for line in file:
                     parts = line.strip().split(',')
                     if parts[0] == "Move":
@@ -249,7 +255,7 @@ class App:
                     self.actions.append(action)
                     self.actions_listbox.insert(tk.END, line.strip())
         except FileNotFoundError:
-            messagebox.showerror("Błąd", "Plik nie istnieje.")
+            messagebox.showerror("Error", "File does not exist.")
 
     def check_coordinates(self, event=None):
         x, y = pyautogui.position()

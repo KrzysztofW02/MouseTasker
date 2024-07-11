@@ -51,6 +51,9 @@ coverage.xml
 .pytest_cache/
 cover/
 
+#To ignore the files created by save action
+*.txt
+
 # Translations
 *.mo
 *.pot

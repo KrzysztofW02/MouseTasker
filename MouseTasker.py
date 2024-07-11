@@ -54,6 +54,19 @@ class MouseMoveCLick(MouseAction):
         pyautogui.moveTo(self.x, self.y, self.time)
         pyautogui.click()
 
+class MouseDrag(MouseAction):
+    #pyautogui.dragTo(300, 400, 2, button='left')  # drag mouse to X of 300, Y of 400 over 2 seconds while holding down left mouse button
+    def __init__(self, x, y, time):
+        self.x = x 
+        self.y = y
+        self.time = time
+
+    def __str__(self):
+        return f"MouseDrag: {self.x}, {self.y}, {self.time}"
+    
+    def execute(self):
+        pyautogui.dragTo(self.x, self.y, self.time, button='left')
+
 class ActionDialog(simpledialog.Dialog):
     def body(self, master):
         pass
@@ -169,6 +182,38 @@ class MoveClickDialog(ActionDialog):
         except ValueError:
             messagebox.showerror("Error", "Please enter valid numerical values.")
 
+class MouseDragDialog(ActionDialog):
+    def __init__(self, master, x=0, y=0, time=1):
+        self.x_val = x
+        self.y_val = y
+        self.wait_val = time
+        super().__init__(master)
+
+    def body(self, master):
+        tk.Label(master, text="X:").grid(row=0)
+        tk.Label(master, text="Y:").grid(row=1)
+        tk.Label(master, text="Time (s):").grid(row=2)
+
+        self.x = tk.Entry(master)
+        self.x.insert(0, str(self.x_val))
+        self.y = tk.Entry(master)
+        self.y.insert(0, str(self.y_val))
+        self.time = tk.Entry(master)
+        self.time.insert(0, str(self.wait_val))
+
+        self.x.grid(row=0, column=1)
+        self.y.grid(row=1, column=1)
+        self.time.grid(row=2, column=1)
+
+    def apply(self):
+        try:
+            x = int(self.x.get())
+            y = int(self.y.get())
+            time = float(self.time.get())
+            self.result = MouseDrag(x, y, time)
+        except ValueError:
+            messagebox.showerror("Error", "Please enter valid numerical values.")
+
     
 
 class App:
@@ -205,6 +250,7 @@ class App:
         self.frame = tk.Frame(self.root)
         self.frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
+        #top buttons
         button_frame_top = ttk.Frame(self.frame)
         button_frame_top.pack(fill=tk.X, expand=False)
 
@@ -215,17 +261,22 @@ class App:
         ttk.Button(top_buttons, text="Add Move", command=self.add_move, style="TButton").pack(side=tk.LEFT, padx=5)
         ttk.Button(top_buttons, text="Add Click", command=self.add_click, style="TButton").pack(side=tk.LEFT, padx=5)
         ttk.Button(top_buttons, text="Add Wait", command=self.add_wait, style="TButton").pack(side=tk.LEFT, padx=5)
+        ttk.Button(top_buttons, text="Add Mouse Drag", command=self.add_mouse_drag, style="TButton").pack(side=tk.LEFT, padx=5)
         ttk.Button(top_buttons, text="Run", command=self.run_actions, style="TButton").pack(side=tk.LEFT, padx=5)
-        ttk.Button(top_buttons, text="Check Coordinates", command=self.check_coordinates, style="TButton").pack(side=tk.LEFT, padx=5)
-        
-        
 
+        #Listbox
+        self.actions_listbox = tk.Listbox(self.frame, height=15, width=50)
+        self.actions_listbox.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
+        self.actions_listbox.config(bg="white", fg="black", borderwidth=0, highlightthickness=0, highlightbackground="#31363b", highlightcolor="#31363b")
+
+        #bottom buttons
         button_frame_bottom = ttk.Frame(self.frame)
         button_frame_bottom.pack(fill=tk.X, expand=False)
 
         bottom_buttons = ttk.Frame(button_frame_bottom)
         bottom_buttons.pack(side=tk.TOP, pady=10)
 
+        ttk.Button(bottom_buttons, text="Check Coordinations", command=self.check_coordinates, style="TButton").pack(side=tk.LEFT, padx=5)
         ttk.Button(bottom_buttons, text="Save", command=self.save_actions, style="TButton").pack(side=tk.LEFT, padx=5)
         ttk.Button(bottom_buttons, text="Load", command=self.load_actions, style="TButton").pack(side=tk.LEFT, padx=5)
         self.edit_button = ttk.Button(bottom_buttons, text="Edit", command=self.edit_action, style="TButton")
@@ -234,10 +285,6 @@ class App:
         self.delete_button.pack(side=tk.LEFT, padx=5)
         ttk.Button(bottom_buttons, text="Help", command=self.show_shortcuts, style="TButton").pack(side=tk.LEFT, padx=5)
 
-
-        self.actions_listbox = tk.Listbox(self.frame, height=15, width=50)
-        self.actions_listbox.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
-        self.actions_listbox.config(bg="white", fg="black", borderwidth=0, highlightthickness=0, highlightbackground="#31363b", highlightcolor="#31363b")
 
         #Bindings keys
         self.actions_listbox.bind('<Double-1>', self.edit_action)
@@ -321,6 +368,18 @@ class App:
             self.actions_listbox.insert(insert_position, f"MoveClick: {dialog.result.x}, {dialog.result.y}, {dialog.result.time}")
             self.update_actions_history()
 
+    def add_mouse_drag(self):
+        dialog = MouseDragDialog(self.root)
+        if dialog.result:
+            selected_index = self.actions_listbox.curselection()
+            if selected_index:
+                insert_position = selected_index[0] + 1
+            else:
+                insert_position = len(self.actions)
+            self.actions.insert(insert_position, dialog.result)
+            self.actions_listbox.insert(insert_position, f"MouseDrag: {dialog.result.x}, {dialog.result.y}, {dialog.result.time}")
+            self.update_actions_history()
+
 
     def edit_action(self, event=None):
         selected_index = self.actions_listbox.curselection()
@@ -350,6 +409,12 @@ class App:
                     self.actions[selected_index[0]] = dialog.result
                     self.actions_listbox.delete(selected_index[0])
                     self.actions_listbox.insert(selected_index[0], f"MoveClick: {dialog.result.x}, {dialog.result.y}, {dialog.result.time}")
+            elif isinstance(action, MouseDrag):
+                dialog = MouseDragDialog(self.root, action.x, action.y, action.time)
+                if dialog.result:
+                    self.actions[selected_index[0]] = dialog.result
+                    self.actions_listbox.delete(selected_index[0])
+                    self.actions_listbox.insert(selected_index[0], f"MouseDrag: {dialog.result.x}, {dialog.result.y}, {dialog.result.time}")
 
     def delete_action(self, event=None):
         selected_indices = self.actions_listbox.curselection()
@@ -493,6 +558,7 @@ class App:
         ttk.Button(button_frame, text="Add Click", command=add_click_action, style="TButton").pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Close", command=coord_window.destroy, style="TButton").pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Add Move Click", command=self.add_move_click, style="TButton").pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Add Mouse Drag", command=self.add_mouse_drag, style="TButton").pack(side=tk.LEFT, padx=5)
 
 if __name__ == "__main__":
     root = ThemedTk(theme="radiance")

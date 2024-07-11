@@ -168,7 +168,9 @@ class App:
         self.actions_listbox = tk.Listbox(self.frame, height=15, width=50)
         self.actions_listbox.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
+        self.actions_listbox.bind('<Double-1>', self.edit_action)
         self.root.bind('<c>', self.check_coordinates)
+        self.root.bind('<Delete>', self.delete_action)
 
     def add_move(self):
         dialog = MoveDialog(self.root)
@@ -188,7 +190,7 @@ class App:
             self.actions.append(dialog.result)
             self.actions_listbox.insert(tk.END, f"Wait: {dialog.result.time}s")
 
-    def edit_action(self):
+    def edit_action(self, event=None):
         selected_index = self.actions_listbox.curselection()
         if selected_index:
             action = self.actions[selected_index[0]]
@@ -211,7 +213,7 @@ class App:
                     self.actions_listbox.delete(selected_index[0])
                     self.actions_listbox.insert(selected_index[0], f"Wait: {dialog.result.time}s")
 
-    def delete_action(self):
+    def delete_action(self, event=None):
         selected_index = self.actions_listbox.curselection()
         if selected_index:
             self.actions.pop(selected_index[0])

@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import simpledialog, ttk, messagebox
+from tkinter import simpledialog, ttk, messagebox, Toplevel
 import pyautogui
 import time
 
@@ -138,7 +138,7 @@ class App:
                     foreground=[('active', 'white')])
 
         self.frame = tk.Frame(self.root)
-        self.frame.pack( fill=tk.BOTH, expand=True, padx=10, pady=10)
+        self.frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         button_frame_top = ttk.Frame(self.frame)
         button_frame_top.pack(fill=tk.X, expand=False)
@@ -168,7 +168,6 @@ class App:
         self.actions_listbox = tk.Listbox(self.frame, height=15, width=50)
         self.actions_listbox.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        # Bind keyboard shortcut
         self.root.bind('<c>', self.check_coordinates)
 
     def add_move(self):
@@ -252,7 +251,29 @@ class App:
 
     def check_coordinates(self, event=None):
         x, y = pyautogui.position()
-        messagebox.showinfo("Current Mouse Position", f"X: {x}, Y: {y}")
+        coord_window = Toplevel(self.root)
+        coord_window.title("Current Mouse Position")
+        
+        tk.Label(coord_window, text=f"X: {x}, Y: {y}").pack(pady=10)
+        
+        button_frame = tk.Frame(coord_window)
+        button_frame.pack(pady=10)
+
+        def add_move_action():
+            move_action = MouseMove(x, y, 0)
+            self.actions.append(move_action)
+            self.actions_listbox.insert(tk.END, f"Move: {move_action.x}, {move_action.y}, {move_action.time}")
+            coord_window.destroy()
+
+        def add_click_action():
+            click_action = MouseClick(x, y)
+            self.actions.append(click_action)
+            self.actions_listbox.insert(tk.END, f"Click: {click_action.x}, {click_action.y}")
+            coord_window.destroy()
+        
+        ttk.Button(button_frame, text="Add Move", command=add_move_action, style="TButton").pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Add Click", command=add_click_action, style="TButton").pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Close", command=coord_window.destroy, style="TButton").pack(side=tk.LEFT, padx=5)
 
 if __name__ == "__main__":
     root = tk.Tk()

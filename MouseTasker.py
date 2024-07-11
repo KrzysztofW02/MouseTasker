@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import simpledialog, ttk, messagebox, Toplevel, filedialog
 import pyautogui
 import time
+import copy
 
 class MouseAction:
     def execute(self):
@@ -13,6 +14,9 @@ class MouseMove(MouseAction): # normal move without click
         self.y = y
         self.time = time
 
+    def __str__(self): # to copy or insert in correct form
+        return f"Move: {self.x}, {self.y}, {self.time}"
+
     def execute(self):
         pyautogui.moveTo(self.x, self.y, self.time)
 
@@ -20,6 +24,9 @@ class MouseClick(MouseAction): # click on specific position
     def __init__(self, x, y):
         self.x = x
         self.y = y
+
+    def __str__(self): # to copy or insert in correct form
+        return f"Click: {self.x}, {self.y}"
 
     def execute(self):
         pyautogui.click(self.x, self.y)
@@ -120,6 +127,12 @@ class App:
         self.root.title("MouseTasker")
         self.actions = []
 
+        self.running = False
+        self.copied_action = None
+        self.actions_history = []
+
+        self.update_actions_history()
+
         screen_width = root.winfo_screenwidth()
         window_width = screen_width // 3
         self.root.geometry(f"{window_width}x500")
@@ -171,6 +184,15 @@ class App:
         self.actions_listbox.bind('<Double-1>', self.edit_action)
         self.root.bind('<c>', self.check_coordinates)
         self.root.bind('<Delete>', self.delete_action)
+        self.root.bind('<Control-s>', lambda event: self.save_actions())
+        self.root.bind('<Control-a>', self.select_all_actions)
+
+        self.root.bind('<F1>', self.run_actions)
+        self.root.bind('<F2>', self.stop_actions)
+        self.root.bind('<F5>', self.show_shortcuts)
+        self.root.bind('<Control-c>', self.copy_action)
+        self.root.bind('<Control-v>', self.paste_action)
+        self.root.bind('<Control-z>', self.undo_action)
 
     def add_move(self):
         dialog = MoveDialog(self.root)
@@ -182,6 +204,7 @@ class App:
                 insert_position = len(self.actions)
             self.actions.insert(insert_position, dialog.result)
             self.actions_listbox.insert(insert_position, f"Move: {dialog.result.x}, {dialog.result.y}, {dialog.result.time}")
+            self.update_actions_history()
 
     def add_click(self):
         dialog = ClickDialog(self.root)
@@ -193,6 +216,7 @@ class App:
                 insert_position = len(self.actions)
             self.actions.insert(insert_position, dialog.result)
             self.actions_listbox.insert(insert_position, f"Click: {dialog.result.x}, {dialog.result.y}")
+            self.update_actions_history()
 
     def add_wait(self):
         dialog = WaitDialog(self.root)
@@ -204,6 +228,7 @@ class App:
                 insert_position = len(self.actions)
             self.actions.insert(insert_position, dialog.result)
             self.actions_listbox.insert(insert_position, f"Wait: {dialog.result.time}s")
+            self.update_actions_history()
 
     def edit_action(self, event=None):
         selected_index = self.actions_listbox.curselection()
@@ -229,14 +254,20 @@ class App:
                     self.actions_listbox.insert(selected_index[0], f"Wait: {dialog.result.time}s")
 
     def delete_action(self, event=None):
-        selected_index = self.actions_listbox.curselection()
-        if selected_index:
-            self.actions.pop(selected_index[0])
-            self.actions_listbox.delete(selected_index[0])
+        selected_indices = self.actions_listbox.curselection()
 
-    def run_actions(self):
+
+        for index in reversed(selected_indices):
+            self.actions.pop(index)
+            self.actions_listbox.delete(index)
+
+    def run_actions(self, event=None):
+        self.running = True
         for action in self.actions:
+            if not self.running:
+                break
             action.execute()
+        self.running = False
 
     def save_actions(self):
         filepath = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")])
@@ -271,6 +302,50 @@ class App:
                     self.actions_listbox.insert(tk.END, line.strip())
         except FileNotFoundError:
             messagebox.showerror("Error", "File does not exist.")
+
+    def select_all_actions(self, event=None):
+        self.actions_listbox.select_set(0, tk.END)
+
+    def stop_actions(self, event=None):
+        self.running = False
+    
+    def show_shortcuts(self, event=None):
+        messagebox.showinfo("Shortcuts", "Shortcuts:\n- Copy: Ctrl+C\n- Paste: Ctrl+V\n- Undo: Ctrl+Z\n- Save: Ctrl+S\n - Select All: Ctrl+A\n- Delete: Delete\n- Check Coordinates: F1\n- Run: F2\n -Stop: F3\n - Show Shortcuts: F5")
+
+    def copy_action(self, event=None):
+        selected_index = self.actions_listbox.curselection()
+        if selected_index:
+            self.copied_action = self.actions[selected_index[0]]
+        
+
+    def paste_action(self, event=None):
+        if hasattr(self, 'copied_action') and self.copied_action:
+            selected_index = self.actions_listbox.curselection()
+            if selected_index:
+                insert_position = selected_index[0] + 1
+            else:
+                insert_position = len(self.actions)
+            self.actions.insert(insert_position, self.copied_action)
+            self.actions_listbox.insert(insert_position, str(self.copied_action))
+            self.update_actions_history()
+
+    def undo_action(self, event=None):
+        print("Undo action triggered")  
+        if self.actions_history:
+            print(f"Before undo: {self.actions_history}")  
+            self.actions = self.actions_history.pop()
+            self.refresh_actions_listbox()
+        else:
+            print("Actions history is empty")  
+
+    def update_actions_history(self, event=None):
+        print(f"Updating actions history: {self.actions}")  
+        self.actions_history.append(copy.deepcopy(self.actions))
+
+    def refresh_actions_listbox(self, event=None):
+        self.actions_listbox.delete(0, tk.END)
+        for action in self.actions:
+            self.actions_listbox.insert(tk.END, str(action))
 
     def check_coordinates(self, event=None):
         x, y = pyautogui.position()

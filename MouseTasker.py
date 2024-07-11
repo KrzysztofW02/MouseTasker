@@ -175,20 +175,35 @@ class App:
     def add_move(self):
         dialog = MoveDialog(self.root)
         if dialog.result:
-            self.actions.append(dialog.result)
-            self.actions_listbox.insert(tk.END, f"Move: {dialog.result.x}, {dialog.result.y}, {dialog.result.time}")
+            selected_index = self.actions_listbox.curselection()
+            if selected_index:
+                insert_position = selected_index[0] + 1
+            else:
+                insert_position = len(self.actions)
+            self.actions.insert(insert_position, dialog.result)
+            self.actions_listbox.insert(insert_position, f"Move: {dialog.result.x}, {dialog.result.y}, {dialog.result.time}")
 
     def add_click(self):
         dialog = ClickDialog(self.root)
         if dialog.result:
-            self.actions.append(dialog.result)
-            self.actions_listbox.insert(tk.END, f"Click: {dialog.result.x}, {dialog.result.y}")
+            selected_index = self.actions_listbox.curselection()
+            if selected_index:
+                insert_position = selected_index[0] + 1
+            else:
+                insert_position = len(self.actions)
+            self.actions.insert(insert_position, dialog.result)
+            self.actions_listbox.insert(insert_position, f"Click: {dialog.result.x}, {dialog.result.y}")
 
     def add_wait(self):
         dialog = WaitDialog(self.root)
         if dialog.result:
-            self.actions.append(dialog.result)
-            self.actions_listbox.insert(tk.END, f"Wait: {dialog.result.time}s")
+            selected_index = self.actions_listbox.curselection()
+            if selected_index:
+                insert_position = selected_index[0] + 1
+            else:
+                insert_position = len(self.actions)
+            self.actions.insert(insert_position, dialog.result)
+            self.actions_listbox.insert(insert_position, f"Wait: {dialog.result.time}s")
 
     def edit_action(self, event=None):
         selected_index = self.actions_listbox.curselection()
@@ -225,7 +240,7 @@ class App:
 
     def save_actions(self):
         filepath = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")])
-        if not filepath:  # If the user cancels the dialog, filepath will be None or ''.
+        if not filepath: 
             return
         with open(filepath, 'w') as file:
             for action in self.actions:
@@ -238,7 +253,7 @@ class App:
 
     def load_actions(self):
         filepath = filedialog.askopenfilename(filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")])
-        if not filepath:  # If the user cancels the dialog, filepath will be None or ''.
+        if not filepath:  
             return
         self.actions.clear()
         self.actions_listbox.delete(0, tk.END)

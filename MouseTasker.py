@@ -7,7 +7,7 @@ class MouseAction:
     def execute(self):
         pass
 
-class MouseMove(MouseAction): #normal move without click
+class MouseMove(MouseAction): # normal move without click
     def __init__(self, x, y, time):
         self.x = x
         self.y = y
@@ -16,7 +16,7 @@ class MouseMove(MouseAction): #normal move without click
     def execute(self):
         pyautogui.moveTo(self.x, self.y, self.time)
 
-class MouseClick(MouseAction): #click on specyfic position
+class MouseClick(MouseAction): # click on specific position
     def __init__(self, x, y):
         self.x = x
         self.y = y
@@ -24,7 +24,7 @@ class MouseClick(MouseAction): #click on specyfic position
     def execute(self):
         pyautogui.click(self.x, self.y)
 
-class Wait(MouseAction): #wait for specyfic secounds
+class Wait(MouseAction): # wait for specific seconds
     def __init__(self, time):
         self.time = time
 
@@ -150,6 +150,7 @@ class App:
         ttk.Button(top_buttons, text="Add Click", command=self.add_click, style="TButton").pack(side=tk.LEFT, padx=5)
         ttk.Button(top_buttons, text="Add Wait", command=self.add_wait, style="TButton").pack(side=tk.LEFT, padx=5)
         ttk.Button(top_buttons, text="Run", command=self.run_actions, style="TButton").pack(side=tk.LEFT, padx=5)
+        ttk.Button(top_buttons, text="Check Coordinates", command=self.check_coordinates, style="TButton").pack(side=tk.LEFT, padx=5)
 
         button_frame_bottom = ttk.Frame(self.frame)
         button_frame_bottom.pack(fill=tk.X, expand=False)
@@ -167,6 +168,8 @@ class App:
         self.actions_listbox = tk.Listbox(self.frame, height=15, width=50)
         self.actions_listbox.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
+        # Bind keyboard shortcut
+        self.root.bind('<c>', self.check_coordinates)
 
     def add_move(self):
         dialog = MoveDialog(self.root)
@@ -223,7 +226,7 @@ class App:
         with open('actions.txt', 'w') as file:
             for action in self.actions:
                 if isinstance(action, MouseMove):
-                    file.write(f"Move,{action.x},{action.y},{action.wait}\n")
+                    file.write(f"Move,{action.x},{action.y},{action.time}\n")
                 elif isinstance(action, MouseClick):
                     file.write(f"Click,{action.x},{action.y}\n")
                 elif isinstance(action, Wait):
@@ -246,6 +249,10 @@ class App:
                     self.actions_listbox.insert(tk.END, line.strip())
         except FileNotFoundError:
             messagebox.showerror("Błąd", "Plik nie istnieje.")
+
+    def check_coordinates(self, event=None):
+        x, y = pyautogui.position()
+        messagebox.showinfo("Current Mouse Position", f"X: {x}, Y: {y}")
 
 if __name__ == "__main__":
     root = tk.Tk()

@@ -447,10 +447,7 @@ class MainWindow(QMainWindow):
                 self.actions_list_widget.addItem(f"MoveClick: {action.x}, {action.y}, {action.time}")
             elif isinstance(action, MouseDrag):
                 self.actions_list_widget.addItem(f"MouseDrag: {action.x}, {action.y}, {action.time}")
-
-
-    #def select_all_actions(self, event=None):
-        #self.actions_listbox.select_set(0, tk.END) #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@2
+        
     
     def select_all_actions(self):
         self.actions_list_widget.clearSelection()  # Wyczyść istniejące zaznaczenia

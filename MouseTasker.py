@@ -27,6 +27,9 @@ class ActionExecutor(QThread):
             current_action_index += 1
         self.action_completed.emit()
 
+    def stop_execution(self):
+        self.running = False
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()

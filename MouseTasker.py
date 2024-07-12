@@ -165,35 +165,43 @@ class MainWindow(QMainWindow):
         file_menu = QMenu("File", self)
         menu_bar.addMenu(file_menu)
 
-        save_action = QAction("Save", self)
+        save_action = QAction("Save\tCtrl+S", self)
         save_action.triggered.connect(self.save_actions)
         file_menu.addAction(save_action)
 
-        load_action = QAction("Load", self)
+        load_action = QAction("Load\tCtrl+L", self)
         load_action.triggered.connect(self.load_actions)
         file_menu.addAction(load_action)
 
         edit_menu = QMenu("Edit", self)
         menu_bar.addMenu(edit_menu)
 
-        undo_action = QAction("Undo", self)
+        undo_action = QAction("Undo\tCtrl+Z", self)
         undo_action.triggered.connect(self.undo_action)
         edit_menu.addAction(undo_action)
 
-        copy_action = QAction("Copy", self)
+        copy_action = QAction("Copy\tCtrl+C", self)
         copy_action.triggered.connect(self.copy_action)
         edit_menu.addAction(copy_action)
 
-        paste_action = QAction("Paste", self)
+        paste_action = QAction("Paste\tCtrl+V", self)
         paste_action.triggered.connect(self.paste_action)
         edit_menu.addAction(paste_action)
 
         help_menu = QMenu("Help", self)
         menu_bar.addMenu(help_menu)
+        about_me_action = QAction("About Me", self)
+        help_menu.addAction(about_me_action)
+        about_me_action.triggered.connect(self.show_about_dialog)
 
-        shortcuts_action = QAction("Shortcuts", self)
+        shortcuts_action = QAction("Shortcuts\tF5", self)
         shortcuts_action.triggered.connect(self.show_shortcuts)
         help_menu.addAction(shortcuts_action)
+    
+    def show_about_dialog(self):
+        QMessageBox.about(self, "About Me", "Author: Krzysztof Wąsik\n" \
+                                "GitHub: github.com/KrzysztofW02\n" \
+                                "Contact: Krzysztof.Wasik2002@gmail.com\n")
 
     def add_move(self):
         dialog = MoveDialog(self)

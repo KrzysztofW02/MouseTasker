@@ -81,6 +81,9 @@ class MainWindow(QMainWindow):
         shortcut_select_all_actions = QShortcut(QKeySequence('Ctrl+A'), self)
         shortcut_select_all_actions.activated.connect(self.select_all_actions)
 
+        shortcut_select_all_actions = QShortcut(QKeySequence('Ctrl+L'), self)
+        shortcut_select_all_actions.activated.connect(self.load_actions)
+
     def refresh_ui(self):
         for i in reversed(range(self.layout.count())):
             widget = self.layout.itemAt(i).widget()
@@ -424,19 +427,15 @@ class MainWindow(QMainWindow):
     
     def show_shortcuts(self):
         message = "Shortcuts:\n\n" \
-                  "Add MoveClick: Ctrl+1\n" \
-                  "Add Move: Ctrl+2\n" \
-                  "Add Click: Ctrl+3\n" \
-                  "Add Wait: Ctrl+4\n" \
-                  "Add Mouse Drag: Ctrl+5\n" \
-                  "Run: Ctrl+R\n" \
-                  "Stop: Ctrl+S\n" \
-                  "Check Coordinates: Ctrl+C\n" \
+                  "Copy: Ctrl+C\n" \
+                  "Undo: Ctrl+Z\n" \
                   "Save: Ctrl+S\n" \
+                  "Paste: Ctrl+V\n" \
+                  "RUN / STOP: F1\n" \
+                  "Check Coordinates: C\n" \
                   "Load: Ctrl+L\n" \
-                  "Edit: Ctrl+E\n" \
-                  "Delete: Ctrl+D\n" \
-                  "Show Shortcuts: Ctrl+H"
+                  "Delete: Delete\n" \
+                  "Show Shortcuts: F5"
         QMessageBox.information(self, "Shortcuts", message)
 
     def copy_action(self):

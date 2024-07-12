@@ -1,0 +1,4 @@
+PyQt5
+qtvscodestyle
+pip-tools
+pyautogui

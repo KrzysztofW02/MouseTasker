@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QListWidget, QAction, QMenu, QMenuBar, QHBoxLayout, QFileDialog, QMessageBox, QDialog, QShortcut, QLabel
 from PyQt5.QtGui import QKeySequence
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from actions import MouseMove, MouseClick, Wait, MouseMoveClick, MouseDrag
 from dialogs import MoveDialog, ClickDialog, WaitDialog, MoveClickDialog, MouseDragDialog
 import pyautogui
@@ -8,14 +8,38 @@ import threading
 import copy
 
 
+class ActionExecutor(QThread):
+    update_action_index = pyqtSignal(int)
+    action_completed = pyqtSignal()
+
+    def __init__(self, actions):
+        super().__init__()
+        self.actions = actions
+        self.running = True
+
+    def run(self):
+        current_action_index = 0
+        while self.running and current_action_index < len(self.actions):
+            self.update_action_index.emit(current_action_index)
+            action = self.actions[current_action_index]
+            action.execute()
+            current_action_index += 1
+        self.action_completed.emit()
+
+    def stop_execution(self):
+        self.running = False
+
+    def is_running(self):
+        return self.running
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("MouseTasker")
         self.actions = []
         self.running = False
-        self.current_action_index = 0
-        self.action_thread = None
+        #self.current_action_index = 0
+        self.executor_thread = None
         self.copied_action = None
         self.actions_history = []
 
@@ -29,6 +53,9 @@ class MainWindow(QMainWindow):
 
         self.setup_ui()
         self.create_menu()
+
+        self.actions_running = False
+
     def setup_shortcuts(self): #####################SHORTCUTS
         shortcut_check_coordinates = QShortcut(QKeySequence('C'), self)
         shortcut_check_coordinates.activated.connect(self.check_coordinates)
@@ -39,11 +66,14 @@ class MainWindow(QMainWindow):
         shortcut_save_actions = QShortcut(QKeySequence('Ctrl+S'), self)
         shortcut_save_actions.activated.connect(self.save_actions)
 
-        shortcut_run_actions = QShortcut(QKeySequence('F1'), self)
-        shortcut_run_actions.activated.connect(self.run_actions)
+        #shortcut_run_actions = QShortcut(QKeySequence('F1'), self)
+        #shortcut_run_actions.activated.connect(self.run_actions)
 
-        shortcut_stop_actions = QShortcut(QKeySequence('F2'), self)
-        shortcut_stop_actions.activated.connect(self.stop_actions)
+        #shortcut_stop_actions = QShortcut(QKeySequence('F2'), self)
+        #shortcut_stop_actions.activated.connect(self.stop_actions)
+
+        shortcut_run_stop_actions = QShortcut(QKeySequence('F1'), self)
+        shortcut_run_stop_actions.activated.connect(self.toggle_run_stop_actions)
 
         shortcut_show_shortcuts = QShortcut(QKeySequence('F5'), self)
         shortcut_show_shortcuts.activated.connect(self.show_shortcuts)
@@ -261,43 +291,47 @@ class MainWindow(QMainWindow):
             self.actions_list_widget.takeItem(selected_index)
             self.update_actions_history()
 
+    def toggle_run_stop_actions(self):
+        if not self.actions_running:
+            self.run_actions()
+        else:
+            self.stop_actions()
+
     def run_actions(self):
-        if self.running:
+        if self.actions_running:
+            QMessageBox.warning(self, "Already Running", "Actions are already running.")
             return
 
-        self.running = True
-        selected_indices = self.actions_list_widget.selectedIndexes()
-        if selected_indices:
-            self.current_action_index = selected_indices[0].row()
+        selected_items = self.actions_list_widget.selectedItems()
+        if selected_items:
+            selected_index = self.actions_list_widget.row(selected_items[0])
         else:
-            self.current_action_index = 0
+            selected_index = 0 
 
-        # Start actions in a separate thread to allow stopping actions
-        self.action_thread = threading.Thread(target=self.execute_actions)
-        self.action_thread.start()
+        actions_to_execute = self.actions[selected_index:]
+        if not actions_to_execute:
+            QMessageBox.warning(self, "No Actions", "There are no actions to execute.")
+            return
 
-    def execute_actions(self):
-        while self.running and self.current_action_index < len(self.actions):
-            print(f"Clearing selections, current_action_index: {self.current_action_index}")
-            for i in range(self.actions_list_widget.count()):
-                self.actions_list_widget.item(i).setSelected(False)
-
-            print(f"Selecting item: {self.current_action_index}")
-            self.actions_list_widget.item(self.current_action_index).setSelected(True)
-            self.actions_list_widget.scrollToItem(self.actions_list_widget.item(self.current_action_index))
-
-            action = self.actions[self.current_action_index]
-            print(f"Executing action: {action}")
-            action.execute()
-            self.current_action_index += 1
-
-        print("Actions completed or stopped")
-        self.running = False
-        self.action_thread = None
-        self.actions_list_widget.clearSelection()
+        self.executor_thread = ActionExecutor(actions_to_execute)
+        self.executor_thread.update_action_index.connect(self.highlight_action)
+        self.executor_thread.action_completed.connect(self.on_actions_completed)
+        self.executor_thread.start()
+        self.actions_running = True
 
 
+    def stop_actions(self):
+        if self.executor_thread and self.executor_thread.isRunning():
+            self.executor_thread.stop_execution()
+            self.executor_thread.wait()
+            self.actions_running = False
+            QMessageBox.information(self, "Info", "Actions have been stopped.")
 
+    def highlight_action(self, index):
+        self.actions_list_widget.setCurrentRow(index)
+
+    def on_actions_completed(self):
+        self.actions_running = False
 
     def save_actions(self):
         filepath, _ = QFileDialog.getSaveFileName(self, "Save Actions", "", "Text Files (*.txt);;All Files (*)")
@@ -393,14 +427,6 @@ class MainWindow(QMainWindow):
         for i in range(self.actions_list_widget.count()):
             item = self.actions_list_widget.item(i)
             item.setSelected(True)
-
-    def stop_actions(self):
-        if not self.running:
-            return
-
-        self.running = False
-        QMessageBox.information(self, "Info", "Actions stopped.")
-        self.actions_list_widget.clearSelection()
     
     def show_shortcuts(self):
         message = "Shortcuts:\n\n" \

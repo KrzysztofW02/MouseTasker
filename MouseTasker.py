@@ -340,15 +340,32 @@ class App:
             self.actions.append(move_action)
             self.actions_listbox.insert(tk.END, f"Move: {move_action.x}, {move_action.y}, {move_action.time}")
             coord_window.destroy()
+            self.update_actions_history()
+            
 
         def add_click_action():
             click_action = MouseClick(x, y)
             self.actions.append(click_action)
             self.actions_listbox.insert(tk.END, f"Click: {click_action.x}, {click_action.y}")
             coord_window.destroy()
+            self.update_actions_history()
+
+        def add_move_click():
+            move_click_action = MouseMoveClick(x, y, 1)
+            self.actions.append(move_click_action)
+            self.actions_listbox.insert(tk.END, f"MoveClick: {move_click_action.x}, {move_click_action.y}, {move_click_action.time}")
+            coord_window.destroy()
+            self.update_actions_history()
+
+        def add_mouse_drag():
+            mouse_drag_action = MouseDrag(x, y, 1)
+            self.actions.append(mouse_drag_action)
+            self.actions_listbox.insert(tk.END, f"MouseDrag: {mouse_drag_action.x}, {mouse_drag_action.y}, {mouse_drag_action.time}")
+            coord_window.destroy()
+            self.update_actions_history()
         
+        ttk.Button(button_frame, text="Add Move Click", command=add_move_click, style="TButton").pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Add Move", command=add_move_action, style="TButton").pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Add Click", command=add_click_action, style="TButton").pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Add Mouse Drag", command=add_mouse_drag, style="TButton").pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Close", command=coord_window.destroy, style="TButton").pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Add Move Click", command=self.add_move_click, style="TButton").pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Add Mouse Drag", command=self.add_mouse_drag, style="TButton").pack(side=tk.LEFT, padx=5)

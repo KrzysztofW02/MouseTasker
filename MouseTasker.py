@@ -221,12 +221,16 @@ class App:
         if self.running:
             messagebox.showinfo("Info", "Already running actions.")
             return
-        
+
         self.running = True
-        self.current_action_index = 0
-        
-        # Start actions in a separate thread to allow to stop actions
-        self.action_thread = Thread(target=self.execute_actions)
+        selected_indices = self.actions_listbox.curselection()
+        if selected_indices: 
+            self.current_action_index = selected_indices[0]
+        else:
+            self.current_action_index = 0
+
+        # Start actions in a separate thread to allow stopping actions
+        self.action_thread = threading.Thread(target=self.execute_actions)
         self.action_thread.start()
 
     def execute_actions(self):

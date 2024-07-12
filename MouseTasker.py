@@ -4,7 +4,6 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from actions import MouseMove, MouseClick, Wait, MouseMoveClick, MouseDrag
 from dialogs import MoveDialog, ClickDialog, WaitDialog, MoveClickDialog, MouseDragDialog
 import pyautogui
-import threading
 import copy
 
 
@@ -12,25 +11,21 @@ class ActionExecutor(QThread):
     update_action_index = pyqtSignal(int)
     action_completed = pyqtSignal()
 
-    def __init__(self, actions):
+    def __init__(self, actions, start_index=0):
         super().__init__()
         self.actions = actions
+        self.start_index = start_index
         self.running = True
 
     def run(self):
         current_action_index = 0
         while self.running and current_action_index < len(self.actions):
-            self.update_action_index.emit(current_action_index)
+            adjusted_index = current_action_index + self.start_index
+            self.update_action_index.emit(adjusted_index)
             action = self.actions[current_action_index]
             action.execute()
             current_action_index += 1
         self.action_completed.emit()
-
-    def stop_execution(self):
-        self.running = False
-
-    def is_running(self):
-        return self.running
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -38,7 +33,6 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("MouseTasker")
         self.actions = []
         self.running = False
-        #self.current_action_index = 0
         self.executor_thread = None
         self.copied_action = None
         self.actions_history = []
@@ -65,12 +59,6 @@ class MainWindow(QMainWindow):
 
         shortcut_save_actions = QShortcut(QKeySequence('Ctrl+S'), self)
         shortcut_save_actions.activated.connect(self.save_actions)
-
-        #shortcut_run_actions = QShortcut(QKeySequence('F1'), self)
-        #shortcut_run_actions.activated.connect(self.run_actions)
-
-        #shortcut_stop_actions = QShortcut(QKeySequence('F2'), self)
-        #shortcut_stop_actions.activated.connect(self.stop_actions)
 
         shortcut_run_stop_actions = QShortcut(QKeySequence('F1'), self)
         shortcut_run_stop_actions.activated.connect(self.toggle_run_stop_actions)
@@ -313,7 +301,7 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "No Actions", "There are no actions to execute.")
             return
 
-        self.executor_thread = ActionExecutor(actions_to_execute)
+        self.executor_thread = ActionExecutor(actions_to_execute, selected_index)
         self.executor_thread.update_action_index.connect(self.highlight_action)
         self.executor_thread.action_completed.connect(self.on_actions_completed)
         self.executor_thread.start()

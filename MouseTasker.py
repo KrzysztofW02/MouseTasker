@@ -5,6 +5,7 @@ from actions import MouseMove, MouseClick, Wait, MouseMoveClick, MouseDrag
 from dialogs import MoveDialog, ClickDialog, WaitDialog, MoveClickDialog, MouseDragDialog
 import pyautogui
 import copy
+import threading
 
 
 class App:
@@ -229,14 +230,22 @@ class App:
         self.action_thread.start()
 
     def execute_actions(self):
-        while self.running and self.current_action_index < len(self.actions):
-            action = self.actions[self.current_action_index]
-            action.execute()
-            self.current_action_index += 1
+        def action_runner():
+            while self.running and self.current_action_index < len(self.actions):
+                self.actions_listbox.select_clear(0, tk.END)
+                self.actions_listbox.select_set(self.current_action_index)
+                self.actions_listbox.see(self.current_action_index)
 
-        # Reset after actions are finished
-        self.running = False
-        self.action_thread = None
+                action = self.actions[self.current_action_index]
+                action.execute()
+                self.current_action_index += 1
+
+            self.running = False
+            self.action_thread = None
+            self.actions_listbox.select_clear(0, tk.END)
+
+        self.action_thread = threading.Thread(target=action_runner)
+        self.action_thread.start()
 
     def save_actions(self):
         filepath = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")])
@@ -315,10 +324,11 @@ class App:
             return
         
         self.running = False
-        if self.action_thread and self.action_thread.is_alive():
-            self.action_thread.join()  # Wait for thread to finish
+       # if self.action_thread and self.action_thread.is_alive():
+        # self.action_thread.join()  # Wait for thread to finish
 
         messagebox.showinfo("Info", "Actions stopped.")
+        self.actions_listbox.select_clear(0, tk.END)  # Clear selection
     
     def show_shortcuts(self, event=None):
         messagebox.showinfo("Shortcuts", "Shortcuts:\n- Copy: Ctrl+C\n- Paste: Ctrl+V\n- Undo: Ctrl+Z\n- Save: Ctrl+S\n- Select All: Ctrl+A\n- Delete: Delete\n- Check Coordinates: C\n- Run: F1\n- Stop: F2\n- Show Shortcuts: F5")

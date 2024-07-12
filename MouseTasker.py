@@ -206,6 +206,7 @@ class App:
                     self.actions[selected_index[0]] = dialog.result
                     self.actions_listbox.delete(selected_index[0])
                     self.actions_listbox.insert(selected_index[0], f"MouseDrag: {dialog.result.x}, {dialog.result.y}, {dialog.result.time}")
+            self.update_actions_history()
 
     def delete_action(self, event=None):
         selected_indices = self.actions_listbox.curselection()
@@ -214,6 +215,7 @@ class App:
         for index in reversed(selected_indices):
             self.actions.pop(index)
             self.actions_listbox.delete(index)
+            self.update_actions_history()
 
     def run_actions(self, event=None):
         if self.running:

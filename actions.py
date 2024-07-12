@@ -32,6 +32,9 @@ class Wait(MouseAction): # wait for specific seconds
     def __init__(self, time):
         self.time = time
 
+    def __str__(self): # to copy or insert in correct form
+        return f"Wait: {self.time}s"
+
     def execute(self):
         time.sleep(self.time)
 

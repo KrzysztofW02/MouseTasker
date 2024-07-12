@@ -211,7 +211,6 @@ class App:
     def delete_action(self, event=None):
         selected_indices = self.actions_listbox.curselection()
 
-
         for index in reversed(selected_indices):
             self.actions.pop(index)
             self.actions_listbox.delete(index)
@@ -253,25 +252,59 @@ class App:
                     file.write(f"Wait,{action.time}\n")
 
     def load_actions(self):
-        filepath = filedialog.askopenfilename(filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")])
-        if not filepath:  
-            return
-        self.actions.clear()
-        self.actions_listbox.delete(0, tk.END)
-        try:
-            with open(filepath, 'r') as file:
-                for line in file:
-                    parts = line.strip().split(',')
-                    if parts[0] == "Move":
-                        action = MouseMove(int(parts[1]), int(parts[2]), float(parts[3]))
-                    elif parts[0] == "Click":
-                        action = MouseClick(int(parts[1]), int(parts[2]))
-                    elif parts[0] == "Wait":
-                        action = Wait(float(parts[1]))
-                    self.actions.append(action)
-                    self.actions_listbox.insert(tk.END, line.strip())
-        except FileNotFoundError:
-            messagebox.showerror("Error", "File does not exist.")
+        # Warning before load new actions
+        if messagebox.askyesno("Warning", "Loading a new file will remove your current actions list. Would you like to continue?"):
+            filepath = filedialog.askopenfilename(filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")])
+            if not filepath:  
+                return
+            temp_actions = [] 
+            try:
+                with open(filepath, 'r') as file:
+                    for line in file:
+                        parts = line.strip().split(',')
+                        if parts[0] == "Move" and len(parts) == 4:
+                            try:
+                                action = MouseMove(int(parts[1]), int(parts[2]), float(parts[3]))
+                            except ValueError:
+                                messagebox.showerror("Error", "File is incorrect!")
+                                return
+                        elif parts[0] == "Click" and len(parts) == 3:
+                            try:
+                                action = MouseClick(int(parts[1]), int(parts[2]))
+                            except ValueError:
+                                messagebox.showerror("Error", "File is incorrect!")
+                                return
+                        elif parts[0] == "Wait" and len(parts) == 2:
+                            try:
+                                action = Wait(float(parts[1]))
+                            except ValueError:
+                                messagebox.showerror("Error", "File is incorrect!")
+                                return
+                        elif parts[0] == "MoveClick" and len(parts) == 4:
+                            try:
+                                action = MouseMoveClick(int(parts[1]), int(parts[2]), float(parts[3]))
+                            except ValueError:
+                                messagebox.showerror("Error", "File is incorrect!")
+                                return
+                        elif parts[0] == "MouseDrag" and len(parts) == 4:
+                            try:
+                                action = MouseDrag(int(parts[1]), int(parts[2]), float(parts[3]))
+                            except ValueError:
+                                messagebox.showerror("Error", "File is incorrect!")
+                                return
+                        else:
+                            messagebox.showerror("Error", "File is incorrect!")
+                            return
+                        temp_actions.append(action)
+            except FileNotFoundError:
+                messagebox.showerror("Error", "File does not exist.")
+                return
+
+            self.actions.clear()
+            self.actions_listbox.delete(0, tk.END)
+            for action in temp_actions:
+                self.actions.append(action)
+                self.actions_listbox.insert(tk.END, str(action))
 
     def select_all_actions(self, event=None):
         self.actions_listbox.select_set(0, tk.END)

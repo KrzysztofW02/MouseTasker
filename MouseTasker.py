@@ -121,6 +121,7 @@ class MainWindow(QMainWindow):
         self.actions_list_widget = QListWidget()
         self.actions_list_widget.itemDoubleClicked.connect(self.edit_action)
         self.actions_list_widget.setSelectionMode(QListWidget.SingleSelection)
+        self.actions_list_widget.setStyleSheet("QListWidget { font-size: 11pt; }")
         self.layout.addWidget(self.actions_list_widget)
 
         self.bottom_buttons_layout = QHBoxLayout()
@@ -325,6 +326,8 @@ class MainWindow(QMainWindow):
         filepath, _ = QFileDialog.getSaveFileName(self, "Save Actions", "", "Text Files (*.txt);;All Files (*)")
         if not filepath:
             return
+        if not filepath.endswith('.txt'):
+            filepath += '.txt'
         with open(filepath, 'w') as file:
             for action in self.actions:
                 if isinstance(action, MouseMove):

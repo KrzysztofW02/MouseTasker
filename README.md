@@ -11,7 +11,19 @@ Clone this repository and install the required packages:
 
 ```sh
 git clone https://github.com/KrzysztofW02/MouseTasker.git
-cd mousetasker
+cd MouseTasker
+python3 -m venv venv
+```
+For Unix and MacOS systems: 
+```sh
+source venv/bin/activate
+```
+For Windows systems:
+```sh
+venv\Scripts\activate
+```
+Than
+```sh
 pip install -r requirements.txt
 ```
 

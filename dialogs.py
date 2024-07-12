@@ -1,150 +1,181 @@
-import tkinter as tk
-from tkinter import simpledialog, messagebox
-from actions import MouseMove, MouseClick, Wait, MouseMoveClick, MouseDrag
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox
 
-class ActionDialog(simpledialog.Dialog):
-    def body(self, master):
-        pass
+class MoveDialog(QDialog):
+    def __init__(self, parent=None, x=None, y=None, time=None):
+        super().__init__(parent)
+        self.setWindowTitle("Move Action")
+        
+        self.layout = QVBoxLayout()
+        self.x_input = QLineEdit(self)
+        self.y_input = QLineEdit(self)
+        self.time_input = QLineEdit(self)
+        
+        if x is not None:
+            self.x_input.setText(str(x))
+        if y is not None:
+            self.y_input.setText(str(y))
+        if time is not None:
+            self.time_input.setText(str(time))
+        
+        self.layout.addWidget(QLabel("X:"))
+        self.layout.addWidget(self.x_input)
+        self.layout.addWidget(QLabel("Y:"))
+        self.layout.addWidget(self.y_input)
+        self.layout.addWidget(QLabel("Time:"))
+        self.layout.addWidget(self.time_input)
+        
+        self.ok_button = QPushButton("OK")
+        self.ok_button.clicked.connect(self.accept)
+        self.layout.addWidget(self.ok_button)
+        
+        self.setLayout(self.layout)
+        self.result = None
 
-    def apply(self):
-        pass
-
-class MoveDialog(ActionDialog):
-    def __init__(self, master, x=0, y=0, time=1):
-        self.x_val = x
-        self.y_val = y
-        self.wait_val = time
-        super().__init__(master)
-
-    def body(self, master):
-        tk.Label(master, text="X:").grid(row=0)
-        tk.Label(master, text="Y:").grid(row=1)
-        tk.Label(master, text="Czas (s):").grid(row=2)
-
-        self.x = tk.Entry(master)
-        self.x.insert(0, str(self.x_val))
-        self.y = tk.Entry(master)
-        self.y.insert(0, str(self.y_val))
-        self.time = tk.Entry(master)
-        self.time.insert(0, str(self.wait_val))
-
-        self.x.grid(row=0, column=1)
-        self.y.grid(row=1, column=1)
-        self.time.grid(row=2, column=1)
-
-    def apply(self):
+    def accept(self):
+        if not self.x_input.text() or not self.y_input.text() or not self.time_input.text():
+            QMessageBox.warning(self, "Warning", "All fields must be filled out.")
+            return
         try:
-            x = int(self.x.get())
-            y = int(self.y.get())
-            time = float(self.time.get())
-            self.result = MouseMove(x, y, time)
+            self.result = (int(self.x_input.text()), int(self.y_input.text()), float(self.time_input.text()))
         except ValueError:
-            messagebox.showerror("Błąd", "Proszę wprowadzić poprawne wartości liczbowe.")
+            pass
+        super().accept()
 
-class ClickDialog(ActionDialog):
-    def __init__(self, master, x=0, y=0):
-        self.x_val = x
-        self.y_val = y
-        super().__init__(master)
+class ClickDialog(QDialog):
+    def __init__(self, parent=None, x=None, y=None):
+        super().__init__(parent)
+        self.setWindowTitle("Click Action")
+        
+        self.layout = QVBoxLayout()
+        self.x_input = QLineEdit(self)
+        self.y_input = QLineEdit(self)
 
-    def body(self, master):
-        tk.Label(master, text="X:").grid(row=0)
-        tk.Label(master, text="Y:").grid(row=1)
+        if x is not None:
+            self.x_input.setText(str(x))
+        if y is not None:
+            self.y_input.setText(str(y))
+        
+        self.layout.addWidget(QLabel("X:"))
+        self.layout.addWidget(self.x_input)
+        self.layout.addWidget(QLabel("Y:"))
+        self.layout.addWidget(self.y_input)
+        
+        self.ok_button = QPushButton("OK")
+        self.ok_button.clicked.connect(self.accept)
+        self.layout.addWidget(self.ok_button)
+        
+        self.setLayout(self.layout)
+        self.result = None
 
-        self.x = tk.Entry(master)
-        self.x.insert(0, str(self.x_val))
-        self.y = tk.Entry(master)
-        self.y.insert(0, str(self.y_val))
+    def accept(self):
+        if not self.x_input.text() or not self.y_input.text():
+            QMessageBox.warning(self, "Warning", "All fields must be filled out.")
+            return
+        self.result = (int(self.x_input.text()), int(self.y_input.text()))
+        super().accept()
 
-        self.x.grid(row=0, column=1)
-        self.y.grid(row=1, column=1)
 
-    def apply(self):
-        try:
-            x = int(self.x.get())
-            y = int(self.y.get())
-            self.result = MouseClick(x, y)
-        except ValueError:
-            messagebox.showerror("Błąd", "Proszę wprowadzić poprawne wartości liczbowe.")
+class WaitDialog(QDialog):
+    def __init__(self, parent=None, time=None):
+        super().__init__(parent)
+        self.setWindowTitle("Wait Action")
+        
+        self.layout = QVBoxLayout()
+        self.time_input = QLineEdit(self)
 
-class WaitDialog(ActionDialog):
-    def __init__(self, master, time_value=1):
-        self.time_val = time_value
-        super().__init__(master)
+        if time is not None:
+            self.time_input.setText(str(time))
+        
+        self.layout.addWidget(QLabel("Time:"))
+        self.layout.addWidget(self.time_input)
+        
+        self.ok_button = QPushButton("OK")
+        self.ok_button.clicked.connect(self.accept)
+        self.layout.addWidget(self.ok_button)
+        
+        self.setLayout(self.layout)
+        self.result = None
 
-    def body(self, master):
-        tk.Label(master, text="Czas (s):").grid(row=0)
-        self.time_entry = tk.Entry(master)
-        self.time_entry.insert(0, str(self.time_val))
-        self.time_entry.grid(row=0, column=1)
+    def accept(self):
+        if not self.time_input.text():
+            QMessageBox.warning(self, "Warning", "All fields must be filled out.")
+            return
+        self.result = float(self.time_input.text())
+        super().accept()
+    
 
-    def apply(self):
-        try:
-            time_value = float(self.time_entry.get())
-            self.result = Wait(time_value)
-        except ValueError:
-            messagebox.showerror("Błąd", "Proszę wprowadzić poprawny czas.")
+class MoveClickDialog(QDialog):
+    def __init__(self, parent=None, x=None, y=None, time=None):
+        super().__init__(parent)
+        self.setWindowTitle("MoveClick Action")
+        
+        self.layout = QVBoxLayout()
+        self.x_input = QLineEdit(self)
+        self.y_input = QLineEdit(self)
+        self.time_input = QLineEdit(self)
 
-class MoveClickDialog(ActionDialog):
-    def __init__(self, master, x=0, y=0, time=1):
-        self.x_val = x
-        self.y_val = y
-        self.wait_val = time
-        super().__init__(master)
+        if x is not None:
+            self.x_input.setText(str(x))
+        if y is not None:
+            self.y_input.setText(str(y))
+        if time is not None:
+            self.time_input.setText(str(time))
+        
+        self.layout.addWidget(QLabel("X:"))
+        self.layout.addWidget(self.x_input)
+        self.layout.addWidget(QLabel("Y:"))
+        self.layout.addWidget(self.y_input)
+        self.layout.addWidget(QLabel("Time:"))
+        self.layout.addWidget(self.time_input)
+        
+        self.ok_button = QPushButton("OK")
+        self.ok_button.clicked.connect(self.accept)
+        self.layout.addWidget(self.ok_button)
+        
+        self.setLayout(self.layout)
+        self.result = None
 
-    def body(self, master):
-        tk.Label(master, text="X:").grid(row=0)
-        tk.Label(master, text="Y:").grid(row=1)
-        tk.Label(master, text="Time (s):").grid(row=2)
+    def accept(self):
+        if not self.x_input.text() or not self.y_input.text() or not self.time_input.text():
+            QMessageBox.warning(self, "Warning", "All fields must be filled out.")
+            return
+        self.result = (int(self.x_input.text()), int(self.y_input.text()), float(self.time_input.text()))
+        super().accept()
 
-        self.x = tk.Entry(master)
-        self.x.insert(0, str(self.x_val))
-        self.y = tk.Entry(master)
-        self.y.insert(0, str(self.y_val))
-        self.time = tk.Entry(master)
-        self.time.insert(0, str(self.wait_val))
+class MouseDragDialog(QDialog):
+    def __init__(self, parent=None, x=None, y=None, time=None):
+        super().__init__(parent)
+        self.setWindowTitle("MouseDrag Action")
+        
+        self.layout = QVBoxLayout()
+        self.x_input = QLineEdit(self)
+        self.y_input = QLineEdit(self)
+        self.time_input = QLineEdit(self)
 
-        self.x.grid(row=0, column=1)
-        self.y.grid(row=1, column=1)
-        self.time.grid(row=2, column=1)
+        if x is not None:
+            self.x_input.setText(str(x))
+        if y is not None:
+            self.y_input.setText(str(y))
+        if time is not None:
+            self.time_input.setText(str(time))
+        
+        self.layout.addWidget(QLabel("X:"))
+        self.layout.addWidget(self.x_input)
+        self.layout.addWidget(QLabel("Y:"))
+        self.layout.addWidget(self.y_input)
+        self.layout.addWidget(QLabel("Time:"))
+        self.layout.addWidget(self.time_input)
+        
+        self.ok_button = QPushButton("OK")
+        self.ok_button.clicked.connect(self.accept)
+        self.layout.addWidget(self.ok_button)
+        
+        self.setLayout(self.layout)
+        self.result = None
 
-    def apply(self):
-        try:
-            x = int(self.x.get())
-            y = int(self.y.get())
-            time = float(self.time.get())
-            self.result = MouseMoveClick(x, y, time)
-        except ValueError:
-            messagebox.showerror("Error", "Please enter valid numerical values.")
-
-class MouseDragDialog(ActionDialog):
-    def __init__(self, master, x=0, y=0, time=1):
-        self.x_val = x
-        self.y_val = y
-        self.wait_val = time
-        super().__init__(master)
-
-    def body(self, master):
-        tk.Label(master, text="X:").grid(row=0)
-        tk.Label(master, text="Y:").grid(row=1)
-        tk.Label(master, text="Time (s):").grid(row=2)
-
-        self.x = tk.Entry(master)
-        self.x.insert(0, str(self.x_val))
-        self.y = tk.Entry(master)
-        self.y.insert(0, str(self.y_val))
-        self.time = tk.Entry(master)
-        self.time.insert(0, str(self.wait_val))
-
-        self.x.grid(row=0, column=1)
-        self.y.grid(row=1, column=1)
-        self.time.grid(row=2, column=1)
-
-    def apply(self):
-        try:
-            x = int(self.x.get())
-            y = int(self.y.get())
-            time = float(self.time.get())
-            self.result = MouseDrag(x, y, time)
-        except ValueError:
-            messagebox.showerror("Error", "Please enter valid numerical values.")
+    def accept(self):
+        if not self.x_input.text() or not self.y_input.text() or not self.time_input.text():
+            QMessageBox.warning(self, "Warning", "All fields must be filled out.")
+            return
+        self.result = (int(self.x_input.text()), int(self.y_input.text()), float(self.time_input.text()))
+        super().accept()

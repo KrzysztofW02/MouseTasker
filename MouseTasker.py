@@ -1,231 +1,274 @@
-import tkinter as tk
-from tkinter import ttk, messagebox, Toplevel, filedialog
-from threading import Thread
+from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QListWidget, QAction, QMenu, QMenuBar, QHBoxLayout, QFileDialog, QMessageBox, QDialog, QShortcut, QLabel
+from PyQt5.QtGui import QKeySequence
+from PyQt5.QtCore import Qt
 from actions import MouseMove, MouseClick, Wait, MouseMoveClick, MouseDrag
 from dialogs import MoveDialog, ClickDialog, WaitDialog, MoveClickDialog, MouseDragDialog
 import pyautogui
-import copy
 import threading
+import copy
 
 
-class App:
-    def __init__(self, root):
-        self.root = root
-        self.root.set_theme("radiance")
-
-        self.root.title("MouseTasker")
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("MouseTasker")
         self.actions = []
-
         self.running = False
         self.current_action_index = 0
         self.action_thread = None
-
         self.copied_action = None
         self.actions_history = []
 
-        self.update_actions_history()
+        self.setup_shortcuts()
 
-        screen_width = root.winfo_screenwidth()
+        self.update_actions_history()
+        
+        screen_width = pyautogui.size().width
         window_width = screen_width // 2
-        self.root.geometry(f"{window_width}x500")
+        self.setGeometry(100, 100, window_width, 500)
 
         self.setup_ui()
         self.create_menu()
+    def setup_shortcuts(self): #####################SHORTCUTS
+        shortcut_check_coordinates = QShortcut(QKeySequence('C'), self)
+        shortcut_check_coordinates.activated.connect(self.check_coordinates)
+
+        shortcut_delete_action = QShortcut(QKeySequence.Delete, self)
+        shortcut_delete_action.activated.connect(self.delete_action)
+
+        shortcut_save_actions = QShortcut(QKeySequence('Ctrl+S'), self)
+        shortcut_save_actions.activated.connect(self.save_actions)
+
+        shortcut_run_actions = QShortcut(QKeySequence('F1'), self)
+        shortcut_run_actions.activated.connect(self.run_actions)
+
+        shortcut_stop_actions = QShortcut(QKeySequence('F2'), self)
+        shortcut_stop_actions.activated.connect(self.stop_actions)
+
+        shortcut_show_shortcuts = QShortcut(QKeySequence('F5'), self)
+        shortcut_show_shortcuts.activated.connect(self.show_shortcuts)
+
+        shortcut_copy_action = QShortcut(QKeySequence('Ctrl+C'), self)
+        shortcut_copy_action.activated.connect(self.copy_action)
+
+        shortcut_paste_action = QShortcut(QKeySequence('Ctrl+V'), self)
+        shortcut_paste_action.activated.connect(self.paste_action)
+
+        shortcut_undo_action = QShortcut(QKeySequence('Ctrl+Z'), self)
+        shortcut_undo_action.activated.connect(self.undo_action)
+
+        shortcut_select_all_actions = QShortcut(QKeySequence('Ctrl+A'), self)
+        shortcut_select_all_actions.activated.connect(self.select_all_actions)
 
     def refresh_ui(self):
-        for widget in self.root.winfo_children():
-            widget.destroy()
+        for i in reversed(range(self.layout.count())):
+            widget = self.layout.itemAt(i).widget()
+            if widget is not None:
+                widget.deleteLater()
         self.setup_ui()
 
     def setup_ui(self):
-        self.style = ttk.Style()
-        self.frame = tk.Frame(self.root)
-        self.frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        self.central_widget = QWidget()
+        self.setCentralWidget(self.central_widget)
+        self.layout = QVBoxLayout()
+        self.central_widget.setLayout(self.layout)
 
-        #top buttons
-        button_frame_top = ttk.Frame(self.frame)
-        button_frame_top.pack(fill=tk.X, expand=False)
+        self.top_buttons_layout = QHBoxLayout()
+        self.layout.addLayout(self.top_buttons_layout)
 
-        top_buttons = ttk.Frame(button_frame_top)
-        top_buttons.pack(side=tk.TOP, pady=10)
+        self.add_move_click_button = QPushButton("Add MoveClick")
+        self.add_move_click_button.clicked.connect(self.add_move_click)
+        self.top_buttons_layout.addWidget(self.add_move_click_button)
 
-        ttk.Button(top_buttons, text="Add MoveClick", command=self.add_move_click, style="TButton").pack(side=tk.LEFT, padx=5)
-        ttk.Button(top_buttons, text="Add Move", command=self.add_move, style="TButton").pack(side=tk.LEFT, padx=5)
-        ttk.Button(top_buttons, text="Add Click", command=self.add_click, style="TButton").pack(side=tk.LEFT, padx=5)
-        ttk.Button(top_buttons, text="Add Wait", command=self.add_wait, style="TButton").pack(side=tk.LEFT, padx=5)
-        ttk.Button(top_buttons, text="Add Mouse Drag", command=self.add_mouse_drag, style="TButton").pack(side=tk.LEFT, padx=5)
-        ttk.Button(top_buttons, text="Run", command=self.run_actions, style="TButton").pack(side=tk.LEFT, padx=5)
+        self.add_move_button = QPushButton("Add Move")
+        self.add_move_button.clicked.connect(self.add_move)
+        self.top_buttons_layout.addWidget(self.add_move_button)
 
-        #Listbox
-        self.actions_listbox = tk.Listbox(self.frame, height=15, width=50)
-        self.actions_listbox.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
-        self.actions_listbox.config(bg="white", fg="black", borderwidth=0, highlightthickness=0, highlightbackground="#31363b", highlightcolor="#31363b")
+        self.add_click_button = QPushButton("Add Click")
+        self.add_click_button.clicked.connect(self.add_click)
+        self.top_buttons_layout.addWidget(self.add_click_button)
 
-        #bottom buttons
-        button_frame_bottom = ttk.Frame(self.frame)
-        button_frame_bottom.pack(fill=tk.X, expand=False)
+        self.add_wait_button = QPushButton("Add Wait")
+        self.add_wait_button.clicked.connect(self.add_wait)
+        self.top_buttons_layout.addWidget(self.add_wait_button)
 
-        bottom_buttons = ttk.Frame(button_frame_bottom)
-        bottom_buttons.pack(side=tk.TOP, pady=10)
+        self.add_mouse_drag_button = QPushButton("Add Mouse Drag")
+        self.add_mouse_drag_button.clicked.connect(self.add_mouse_drag)
+        self.top_buttons_layout.addWidget(self.add_mouse_drag_button)
 
-        ttk.Button(bottom_buttons, text="Check Coordinations", command=self.check_coordinates, style="TButton").pack(side=tk.LEFT, padx=5)
-        ttk.Button(bottom_buttons, text="Save", command=self.save_actions, style="TButton").pack(side=tk.LEFT, padx=5)
-        ttk.Button(bottom_buttons, text="Load", command=self.load_actions, style="TButton").pack(side=tk.LEFT, padx=5)
-        self.edit_button = ttk.Button(bottom_buttons, text="Edit", command=self.edit_action, style="TButton")
-        self.edit_button.pack(side=tk.LEFT, padx=5)
-        self.delete_button = ttk.Button(bottom_buttons, text="Delete", command=self.delete_action, style="TButton")
-        self.delete_button.pack(side=tk.LEFT, padx=5)
-        ttk.Button(bottom_buttons, text="Help", command=self.show_shortcuts, style="TButton").pack(side=tk.LEFT, padx=5)
+        self.run_button = QPushButton("Run")
+        self.run_button.clicked.connect(self.run_actions)
+        self.top_buttons_layout.addWidget(self.run_button)
 
+        self.actions_list_widget = QListWidget()
+        self.actions_list_widget.itemDoubleClicked.connect(self.edit_action)
+        self.actions_list_widget.setSelectionMode(QListWidget.SingleSelection)
+        self.layout.addWidget(self.actions_list_widget)
 
-        #Bindings keys
-        self.actions_listbox.bind('<Double-1>', self.edit_action)
-        self.root.bind('<c>', self.check_coordinates)
-        self.root.bind('<Delete>', self.delete_action)
-        self.root.bind('<Control-s>', lambda event: self.save_actions())
-        self.root.bind('<Control-a>', self.select_all_actions)
+        self.bottom_buttons_layout = QHBoxLayout()
+        self.layout.addLayout(self.bottom_buttons_layout)
 
-        self.root.bind('<F1>', self.run_actions)
-        self.root.bind('<F2>', self.stop_actions)
-        self.root.bind('<F5>', self.show_shortcuts)
-        self.root.bind('<Control-c>', self.copy_action)
-        self.root.bind('<Control-v>', self.paste_action)
-        self.root.bind('<Control-z>', self.undo_action)
+        self.check_coordinates_button = QPushButton("Check Coordinates")
+        self.check_coordinates_button.clicked.connect(self.check_coordinates)
+        self.bottom_buttons_layout.addWidget(self.check_coordinates_button)
+
+        self.save_button = QPushButton("Save")
+        self.save_button.clicked.connect(self.save_actions)
+        self.bottom_buttons_layout.addWidget(self.save_button)
+
+        self.load_button = QPushButton("Load")
+        self.load_button.clicked.connect(self.load_actions)
+        self.bottom_buttons_layout.addWidget(self.load_button)
+
+        self.edit_button = QPushButton("Edit")
+        self.edit_button.clicked.connect(self.edit_action)
+        self.bottom_buttons_layout.addWidget(self.edit_button)
+
+        self.delete_button = QPushButton("Delete")
+        self.delete_button.clicked.connect(self.delete_action)
+        self.bottom_buttons_layout.addWidget(self.delete_button)
+
+        self.help_button = QPushButton("Help")
+        self.help_button.clicked.connect(self.show_shortcuts)
+        self.bottom_buttons_layout.addWidget(self.help_button)
 
     #Menu bar
     def create_menu(self):
-        menu_bar = tk.Menu(self.root)
-        self.root.config(menu=menu_bar)
+        menu_bar = QMenuBar()
+        self.setMenuBar(menu_bar)
 
-        file_menu = tk.Menu(menu_bar, tearoff=0)
-        file_menu.add_command(label="Save", command=self.save_actions)
-        file_menu.add_command(label="Load", command=self.load_actions)
-        menu_bar.add_cascade(label="File", menu=file_menu)
+        file_menu = QMenu("File", self)
+        menu_bar.addMenu(file_menu)
 
-        edit_menu = tk.Menu(menu_bar, tearoff=0)
-        edit_menu.add_command(label="Undo", command=self.undo_action)
-        edit_menu.add_command(label="Copy", command=self.copy_action)
-        edit_menu.add_command(label="Paste", command=self.paste_action)
-        menu_bar.add_cascade(label="Edit", menu=edit_menu)
+        save_action = QAction("Save", self)
+        save_action.triggered.connect(self.save_actions)
+        file_menu.addAction(save_action)
 
-        help_menu = tk.Menu(menu_bar, tearoff=0)
-        help_menu.add_command(label="Shortcuts", command=self.show_shortcuts)
-        menu_bar.add_cascade(label="Help", menu=help_menu)
+        load_action = QAction("Load", self)
+        load_action.triggered.connect(self.load_actions)
+        file_menu.addAction(load_action)
+
+        edit_menu = QMenu("Edit", self)
+        menu_bar.addMenu(edit_menu)
+
+        undo_action = QAction("Undo", self)
+        undo_action.triggered.connect(self.undo_action)
+        edit_menu.addAction(undo_action)
+
+        copy_action = QAction("Copy", self)
+        copy_action.triggered.connect(self.copy_action)
+        edit_menu.addAction(copy_action)
+
+        paste_action = QAction("Paste", self)
+        paste_action.triggered.connect(self.paste_action)
+        edit_menu.addAction(paste_action)
+
+        help_menu = QMenu("Help", self)
+        menu_bar.addMenu(help_menu)
+
+        shortcuts_action = QAction("Shortcuts", self)
+        shortcuts_action.triggered.connect(self.show_shortcuts)
+        help_menu.addAction(shortcuts_action)
 
     def add_move(self):
-        dialog = MoveDialog(self.root)
-        if dialog.result:
-            selected_index = self.actions_listbox.curselection()
-            if selected_index:
-                insert_position = selected_index[0] + 1
-            else:
-                insert_position = len(self.actions)
-            self.actions.insert(insert_position, dialog.result)
-            self.actions_listbox.insert(insert_position, f"Move: {dialog.result.x}, {dialog.result.y}, {dialog.result.time}")
+        dialog = MoveDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            x, y, time = dialog.result
+            action = MouseMove(x, y, time)
+            self.actions.append(action)
+            self.actions_list_widget.addItem(str(action))
             self.update_actions_history()
 
     def add_click(self):
-        dialog = ClickDialog(self.root)
-        if dialog.result:
-            selected_index = self.actions_listbox.curselection()
-            if selected_index:
-                insert_position = selected_index[0] + 1
-            else:
-                insert_position = len(self.actions)
-            self.actions.insert(insert_position, dialog.result)
-            self.actions_listbox.insert(insert_position, f"Click: {dialog.result.x}, {dialog.result.y}")
+        dialog = ClickDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            x, y = dialog.result
+            action = MouseClick(x, y)
+            self.actions.append(action)
+            self.actions_list_widget.addItem(str(action))
             self.update_actions_history()
 
     def add_wait(self):
-        dialog = WaitDialog(self.root)
-        if dialog.result:
-            selected_index = self.actions_listbox.curselection()
-            if selected_index:
-                insert_position = selected_index[0] + 1
-            else:
-                insert_position = len(self.actions)
-            self.actions.insert(insert_position, dialog.result)
-            self.actions_listbox.insert(insert_position, f"Wait: {dialog.result.time}s")
+        dialog = WaitDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            time = dialog.result
+            action = Wait(time)
+            self.actions.append(action)
+            self.actions_list_widget.addItem(str(action))
             self.update_actions_history()
     
     def add_move_click(self):
-        dialog = MoveClickDialog(self.root)
-        if dialog.result:
-            selected_index = self.actions_listbox.curselection()
-            if selected_index:
-                insert_position = selected_index[0] + 1
-            else:
-                insert_position = len(self.actions)
-            self.actions.insert(insert_position, dialog.result)
-            self.actions_listbox.insert(insert_position, f"MoveClick: {dialog.result.x}, {dialog.result.y}, {dialog.result.time}")
+        dialog = MoveClickDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            x, y, time = dialog.result
+            action = MouseMoveClick(x, y, time)
+            self.actions.append(action)
+            self.actions_list_widget.addItem(str(action))
             self.update_actions_history()
 
     def add_mouse_drag(self):
-        dialog = MouseDragDialog(self.root)
-        if dialog.result:
-            selected_index = self.actions_listbox.curselection()
-            if selected_index:
-                insert_position = selected_index[0] + 1
-            else:
-                insert_position = len(self.actions)
-            self.actions.insert(insert_position, dialog.result)
-            self.actions_listbox.insert(insert_position, f"MouseDrag: {dialog.result.x}, {dialog.result.y}, {dialog.result.time}")
+        dialog = MouseDragDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            x, y, time = dialog.result
+            action = MouseDrag(x, y, time)
+            self.actions.append(action)
+            self.actions_list_widget.addItem(str(action))
             self.update_actions_history()
 
 
-    def edit_action(self, event=None):
-        selected_index = self.actions_listbox.curselection()
-        if selected_index:
-            action = self.actions[selected_index[0]]
+    def edit_action(self):
+        selected_items = self.actions_list_widget.selectedItems()
+        if selected_items:
+            selected_index = self.actions_list_widget.row(selected_items[0])
+            action = self.actions[selected_index]
             if isinstance(action, MouseMove):
-                dialog = MoveDialog(self.root, action.x, action.y, action.time)
-                if dialog.result:
-                    self.actions[selected_index[0]] = dialog.result
-                    self.actions_listbox.delete(selected_index[0])
-                    self.actions_listbox.insert(selected_index[0], f"Move: {dialog.result.x}, {dialog.result.y}, {dialog.result.time}")
+                dialog = MoveDialog(self, action.x, action.y, action.time)
+                if dialog.exec_() == QDialog.Accepted:
+                    x, y, time = dialog.result
+                    self.actions[selected_index] = MouseMove(x, y, time)
+                    self.actions_list_widget.item(selected_index).setText(str(self.actions[selected_index]))
             elif isinstance(action, MouseClick):
-                dialog = ClickDialog(self.root, action.x, action.y)
-                if dialog.result:
-                    self.actions[selected_index[0]] = dialog.result
-                    self.actions_listbox.delete(selected_index[0])
-                    self.actions_listbox.insert(selected_index[0], f"Click: {dialog.result.x}, {dialog.result.y}")
+                dialog = ClickDialog(self, action.x, action.y)
+                if dialog.exec_() == QDialog.Accepted:
+                    x, y = dialog.result
+                    self.actions[selected_index] = MouseClick(x, y)
+                    self.actions_list_widget.item(selected_index).setText(str(self.actions[selected_index]))
             elif isinstance(action, Wait):
-                dialog = WaitDialog(self.root, action.time)
-                if dialog.result:
-                    self.actions[selected_index[0]] = dialog.result
-                    self.actions_listbox.delete(selected_index[0])
-                    self.actions_listbox.insert(selected_index[0], f"Wait: {dialog.result.time}s")
+                dialog = WaitDialog(self, action.time)
+                if dialog.exec_() == QDialog.Accepted:
+                    time = dialog.result
+                    self.actions[selected_index] = Wait(time)
+                    self.actions_list_widget.item(selected_index).setText(str(self.actions[selected_index]))
             elif isinstance(action, MouseMoveClick):
-                dialog = MoveClickDialog(self.root, action.x, action.y, action.time)
-                if dialog.result:
-                    self.actions[selected_index[0]] = dialog.result
-                    self.actions_listbox.delete(selected_index[0])
-                    self.actions_listbox.insert(selected_index[0], f"MoveClick: {dialog.result.x}, {dialog.result.y}, {dialog.result.time}")
+                dialog = MoveClickDialog(self, action.x, action.y, action.time)
+                if dialog.exec_() == QDialog.Accepted:
+                    x, y, time = dialog.result
+                    self.actions[selected_index] = MouseMoveClick(x, y, time)
+                    self.actions_list_widget.item(selected_index).setText(str(self.actions[selected_index]))
             elif isinstance(action, MouseDrag):
-                dialog = MouseDragDialog(self.root, action.x, action.y, action.time)
-                if dialog.result:
-                    self.actions[selected_index[0]] = dialog.result
-                    self.actions_listbox.delete(selected_index[0])
-                    self.actions_listbox.insert(selected_index[0], f"MouseDrag: {dialog.result.x}, {dialog.result.y}, {dialog.result.time}")
+                dialog = MouseDragDialog(self, action.x, action.y, action.time)
+                if dialog.exec_() == QDialog.Accepted:
+                    x, y, time = dialog.result
+                    self.actions[selected_index] = MouseDrag(x, y, time)
+                    self.actions_list_widget.item(selected_index).setText(str(self.actions[selected_index]))
             self.update_actions_history()
 
-    def delete_action(self, event=None):
-        selected_indices = self.actions_listbox.curselection()
-
-        for index in reversed(selected_indices):
-            self.actions.pop(index)
-            self.actions_listbox.delete(index)
+    def delete_action(self):
+        selected_items = self.actions_list_widget.selectedItems()
+        if selected_items:
+            selected_index = self.actions_list_widget.row(selected_items[0])
+            del self.actions[selected_index]
+            self.actions_list_widget.takeItem(selected_index)
             self.update_actions_history()
 
-    def run_actions(self, event=None):
+    def run_actions(self):
         if self.running:
-            messagebox.showinfo("Info", "Already running actions.")
             return
 
         self.running = True
-        selected_indices = self.actions_listbox.curselection()
-        if selected_indices: 
-            self.current_action_index = selected_indices[0]
+        selected_indices = self.actions_list_widget.selectedIndexes()
+        if selected_indices:
+            self.current_action_index = selected_indices[0].row()
         else:
             self.current_action_index = 0
 
@@ -234,26 +277,31 @@ class App:
         self.action_thread.start()
 
     def execute_actions(self):
-        def action_runner():
-            while self.running and self.current_action_index < len(self.actions):
-                self.actions_listbox.select_clear(0, tk.END)
-                self.actions_listbox.select_set(self.current_action_index)
-                self.actions_listbox.see(self.current_action_index)
+        while self.running and self.current_action_index < len(self.actions):
+            print(f"Clearing selections, current_action_index: {self.current_action_index}")
+            for i in range(self.actions_list_widget.count()):
+                self.actions_list_widget.item(i).setSelected(False)
 
-                action = self.actions[self.current_action_index]
-                action.execute()
-                self.current_action_index += 1
+            print(f"Selecting item: {self.current_action_index}")
+            self.actions_list_widget.item(self.current_action_index).setSelected(True)
+            self.actions_list_widget.scrollToItem(self.actions_list_widget.item(self.current_action_index))
 
-            self.running = False
-            self.action_thread = None
-            self.actions_listbox.select_clear(0, tk.END)
+            action = self.actions[self.current_action_index]
+            print(f"Executing action: {action}")
+            action.execute()
+            self.current_action_index += 1
 
-        self.action_thread = threading.Thread(target=action_runner)
-        self.action_thread.start()
+        print("Actions completed or stopped")
+        self.running = False
+        self.action_thread = None
+        self.actions_list_widget.clearSelection()
+
+
+
 
     def save_actions(self):
-        filepath = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")])
-        if not filepath: 
+        filepath, _ = QFileDialog.getSaveFileName(self, "Save Actions", "", "Text Files (*.txt);;All Files (*)")
+        if not filepath:
             return
         with open(filepath, 'w') as file:
             for action in self.actions:
@@ -263,156 +311,202 @@ class App:
                     file.write(f"Click,{action.x},{action.y}\n")
                 elif isinstance(action, Wait):
                     file.write(f"Wait,{action.time}\n")
+                elif isinstance(action, MouseMoveClick):
+                    file.write(f"MoveClick,{action.x},{action.y},{action.time}\n")
+                elif isinstance(action, MouseDrag):
+                    file.write(f"MouseDrag,{action.x},{action.y},{action.time}\n")
 
     def load_actions(self):
-        # Warning before load new actions
-        if messagebox.askyesno("Warning", "Loading a new file will remove your current actions list. Would you like to continue?"):
-            filepath = filedialog.askopenfilename(filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")])
-            if not filepath:  
-                return
-            temp_actions = [] 
-            try:
-                with open(filepath, 'r') as file:
-                    for line in file:
-                        parts = line.strip().split(',')
-                        if parts[0] == "Move" and len(parts) == 4:
-                            try:
-                                action = MouseMove(int(parts[1]), int(parts[2]), float(parts[3]))
-                            except ValueError:
-                                messagebox.showerror("Error", "File is incorrect!")
-                                return
-                        elif parts[0] == "Click" and len(parts) == 3:
-                            try:
-                                action = MouseClick(int(parts[1]), int(parts[2]))
-                            except ValueError:
-                                messagebox.showerror("Error", "File is incorrect!")
-                                return
-                        elif parts[0] == "Wait" and len(parts) == 2:
-                            try:
-                                action = Wait(float(parts[1]))
-                            except ValueError:
-                                messagebox.showerror("Error", "File is incorrect!")
-                                return
-                        elif parts[0] == "MoveClick" and len(parts) == 4:
-                            try:
-                                action = MouseMoveClick(int(parts[1]), int(parts[2]), float(parts[3]))
-                            except ValueError:
-                                messagebox.showerror("Error", "File is incorrect!")
-                                return
-                        elif parts[0] == "MouseDrag" and len(parts) == 4:
-                            try:
-                                action = MouseDrag(int(parts[1]), int(parts[2]), float(parts[3]))
-                            except ValueError:
-                                messagebox.showerror("Error", "File is incorrect!")
-                                return
-                        else:
-                            messagebox.showerror("Error", "File is incorrect!")
-                            return
-                        temp_actions.append(action)
-            except FileNotFoundError:
-                messagebox.showerror("Error", "File does not exist.")
-                return
-
-            self.actions.clear()
-            self.actions_listbox.delete(0, tk.END)
-            for action in temp_actions:
-                self.actions.append(action)
-                self.actions_listbox.insert(tk.END, str(action))
-
-    def select_all_actions(self, event=None):
-        self.actions_listbox.select_set(0, tk.END)
-
-    def stop_actions(self, event=None):
-        if not self.running:
-            messagebox.showinfo("Info", "No actions currently running.")
+        if QMessageBox.warning(self, "Warning", "Loading a new file will remove your current actions list. Would you like to continue?",
+                               QMessageBox.Yes | QMessageBox.No) == QMessageBox.No:
             return
-        
-        self.running = False
-       # if self.action_thread and self.action_thread.is_alive():
-        # self.action_thread.join()  # Wait for thread to finish
 
-        messagebox.showinfo("Info", "Actions stopped.")
-        self.actions_listbox.select_clear(0, tk.END)  # Clear selection
+        filepath, _ = QFileDialog.getOpenFileName(self, "Load Actions", "", "Text Files (*.txt);;All Files (*)")
+        if not filepath:
+            return
+
+        temp_actions = []
+        try:
+            with open(filepath, 'r') as file:
+                for line in file:
+                    parts = line.strip().split(',')
+                    if parts[0] == "Move" and len(parts) == 4:
+                        try:
+                            action = MouseMove(int(parts[1]), int(parts[2]), float(parts[3]))
+                        except ValueError:
+                            QMessageBox.critical(self, "Error", "File is incorrect!")
+                            return
+                    elif parts[0] == "Click" and len(parts) == 3:
+                        try:
+                            action = MouseClick(int(parts[1]), int(parts[2]))
+                        except ValueError:
+                            QMessageBox.critical(self, "Error", "File is incorrect!")
+                            return
+                    elif parts[0] == "Wait" and len(parts) == 2:
+                        try:
+                            action = Wait(float(parts[1]))
+                        except ValueError:
+                            QMessageBox.critical(self, "Error", "File is incorrect!")
+                            return
+                    elif parts[0] == "MoveClick" and len(parts) == 4:
+                        try:
+                            action = MouseMoveClick(int(parts[1]), int(parts[2]), float(parts[3]))
+                        except ValueError:
+                            QMessageBox.critical(self, "Error", "File is incorrect!")
+                            return
+                    elif parts[0] == "MouseDrag" and len(parts) == 4:
+                        try:
+                            action = MouseDrag(int(parts[1]), int(parts[2]), float(parts[3]))
+                        except ValueError:
+                            QMessageBox.critical(self, "Error", "File is incorrect!")
+                            return
+                    else:
+                        QMessageBox.critical(self, "Error", "File is incorrect!")
+                        return
+                    temp_actions.append(action)
+        except FileNotFoundError:
+            QMessageBox.critical(self, "Error", "File does not exist.")
+            return
+
+        self.actions.clear()
+        self.actions_list_widget.clear()
+        for action in temp_actions:
+            self.actions.append(action)
+            if isinstance(action, MouseMove):
+                self.actions_list_widget.addItem(f"Move: {action.x}, {action.y}, {action.time}")
+            elif isinstance(action, MouseClick):
+                self.actions_list_widget.addItem(f"Click: {action.x}, {action.y}")
+            elif isinstance(action, Wait):
+                self.actions_list_widget.addItem(f"Wait: {action.time}s")
+            elif isinstance(action, MouseMoveClick):
+                self.actions_list_widget.addItem(f"MoveClick: {action.x}, {action.y}, {action.time}")
+            elif isinstance(action, MouseDrag):
+                self.actions_list_widget.addItem(f"MouseDrag: {action.x}, {action.y}, {action.time}")
+
+
+    #def select_all_actions(self, event=None):
+        #self.actions_listbox.select_set(0, tk.END) #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@2
     
-    def show_shortcuts(self, event=None):
-        messagebox.showinfo("Shortcuts", "Shortcuts:\n- Copy: Ctrl+C\n- Paste: Ctrl+V\n- Undo: Ctrl+Z\n- Save: Ctrl+S\n- Select All: Ctrl+A\n- Delete: Delete\n- Check Coordinates: C\n- Run: F1\n- Stop: F2\n- Show Shortcuts: F5")
+    def select_all_actions(self):
+        self.actions_list_widget.clearSelection()  # Wyczyść istniejące zaznaczenia
 
-    def copy_action(self, event=None):
-        selected_index = self.actions_listbox.curselection()
-        if selected_index:
-            self.copied_action = self.actions[selected_index[0]]
+        for i in range(self.actions_list_widget.count()):
+            item = self.actions_list_widget.item(i)
+            item.setSelected(True)
+
+    def stop_actions(self):
+        if not self.running:
+            return
+
+        self.running = False
+        QMessageBox.information(self, "Info", "Actions stopped.")
+        self.actions_list_widget.clearSelection()
+    
+    def show_shortcuts(self):
+        message = "Shortcuts:\n\n" \
+                  "Add MoveClick: Ctrl+1\n" \
+                  "Add Move: Ctrl+2\n" \
+                  "Add Click: Ctrl+3\n" \
+                  "Add Wait: Ctrl+4\n" \
+                  "Add Mouse Drag: Ctrl+5\n" \
+                  "Run: Ctrl+R\n" \
+                  "Stop: Ctrl+S\n" \
+                  "Check Coordinates: Ctrl+C\n" \
+                  "Save: Ctrl+S\n" \
+                  "Load: Ctrl+L\n" \
+                  "Edit: Ctrl+E\n" \
+                  "Delete: Ctrl+D\n" \
+                  "Show Shortcuts: Ctrl+H"
+        QMessageBox.information(self, "Shortcuts", message)
+
+    def copy_action(self):
+        selected_index = self.actions_list_widget.currentRow()
+        if selected_index != -1:
+            self.copied_action = copy.deepcopy(self.actions[selected_index])
         
 
-    def paste_action(self, event=None):
-        if hasattr(self, 'copied_action') and self.copied_action:
-            selected_index = self.actions_listbox.curselection()
-            if selected_index:
-                insert_position = selected_index[0] + 1
+    def paste_action(self):
+        if self.copied_action is not None:
+            selected_index = self.actions_list_widget.currentRow()
+            if selected_index != -1:
+                insert_position = selected_index + 1
             else:
                 insert_position = len(self.actions)
             self.actions.insert(insert_position, self.copied_action)
-            self.actions_listbox.insert(insert_position, str(self.copied_action))
+            if isinstance(self.copied_action, MouseMove):
+                self.actions_list_widget.insertItem(insert_position, f"Move: {self.copied_action.x}, {self.copied_action.y}, {self.copied_action.time}")
+            elif isinstance(self.copied_action, MouseClick):
+                self.actions_list_widget.insertItem(insert_position, f"Click: {self.copied_action.x}, {self.copied_action.y}")
+            elif isinstance(self.copied_action, Wait):
+                self.actions_list_widget.insertItem(insert_position, f"Wait: {self.copied_action.time}s")
+            elif isinstance(self.copied_action, MouseMoveClick):
+                self.actions_list_widget.insertItem(insert_position, f"MoveClick: {self.copied_action.x}, {self.copied_action.y}, {self.copied_action.time}")
+            elif isinstance(self.copied_action, MouseDrag):
+                self.actions_list_widget.insertItem(insert_position, f"MouseDrag: {self.copied_action.x}, {self.copied_action.y}, {self.copied_action.time}")
             self.update_actions_history()
 
-    def undo_action(self, event=None):
-        print("Undo action triggered")  
+    def undo_action(self):
         if self.actions_history:
-            print(f"Before undo: {self.actions_history}")  
             self.actions = self.actions_history.pop()
             self.refresh_actions_listbox()
         else:
-            print("Actions history is empty")  
+            QMessageBox.information(self, "Info", "Actions history is empty.")
 
-    def update_actions_history(self, event=None):
-        print(f"Updating actions history: {self.actions}")  
+
+    def update_actions_history(self):
         self.actions_history.append(copy.deepcopy(self.actions))
 
-    def refresh_actions_listbox(self, event=None):
-        self.actions_listbox.delete(0, tk.END)
+    def refresh_actions_listbox(self):
+        self.actions_list_widget.clear()
         for action in self.actions:
-            self.actions_listbox.insert(tk.END, str(action))
+            if isinstance(action, MouseMove):
+                self.actions_list_widget.addItem(f"Move: {action.x}, {action.y}, {action.time}")
+            elif isinstance(action, MouseClick):
+                self.actions_list_widget.addItem(f"Click: {action.x}, {action.y}")
+            elif isinstance(action, Wait):
+                self.actions_list_widget.addItem(f"Wait: {action.time}s")
+            elif isinstance(action, MouseMoveClick):
+                self.actions_list_widget.addItem(f"MoveClick: {action.x}, {action.y}, {action.time}")
+            elif isinstance(action, MouseDrag):
+                self.actions_list_widget.addItem(f"MouseDrag: {action.x}, {action.y}, {action.time}")
 
-    def check_coordinates(self, event=None):
+    def check_coordinates(self):
         x, y = pyautogui.position()
-        coord_window = Toplevel(self.root)
-        coord_window.title("Current Mouse Position")
-        
-        tk.Label(coord_window, text=f"X: {x}, Y: {y}").pack(pady=10)
-        
-        button_frame = tk.Frame(coord_window)
-        button_frame.pack(pady=10)
+        coord_window = QMessageBox(self)
+        coord_window.setWindowTitle("Current Mouse Position")
+        coord_label = QLabel(f"X: {x}, Y: {y}")
+        coord_label.setAlignment(Qt.AlignCenter)  
+        coord_window.layout().addWidget(coord_label, 0, Qt.AlignLeft) 
+        coord_window.setStyleSheet("QLabel{min-width: 500px; font-size: 20pt;}")
 
-        def add_move_action():
-            move_action = MouseMove(x, y, 1) ####### default time is 1 second instead of 0 @@@@@@@@@
+
+
+        add_move_button = coord_window.addButton("Add Move", QMessageBox.ActionRole)
+        add_click_button = coord_window.addButton("Add Click", QMessageBox.ActionRole)
+        add_move_click_button = coord_window.addButton("Add MoveClick", QMessageBox.ActionRole)
+        add_mouse_drag_button = coord_window.addButton("Add Mouse Drag", QMessageBox.ActionRole)
+        close_button = coord_window.addButton("Close", QMessageBox.RejectRole)
+
+        coord_window.exec()
+
+        if coord_window.clickedButton() == add_move_button:
+            move_action = MouseMove(x, y, 1)
             self.actions.append(move_action)
-            self.actions_listbox.insert(tk.END, f"Move: {move_action.x}, {move_action.y}, {move_action.time}")
-            coord_window.destroy()
+            self.actions_list_widget.addItem(f"Move: {move_action.x}, {move_action.y}, {move_action.time}")
             self.update_actions_history()
-            
-
-        def add_click_action():
+        elif coord_window.clickedButton() == add_click_button:
             click_action = MouseClick(x, y)
             self.actions.append(click_action)
-            self.actions_listbox.insert(tk.END, f"Click: {click_action.x}, {click_action.y}")
-            coord_window.destroy()
+            self.actions_list_widget.addItem(f"Click: {click_action.x}, {click_action.y}")
             self.update_actions_history()
-
-        def add_move_click():
+        elif coord_window.clickedButton() == add_move_click_button:
             move_click_action = MouseMoveClick(x, y, 1)
             self.actions.append(move_click_action)
-            self.actions_listbox.insert(tk.END, f"MoveClick: {move_click_action.x}, {move_click_action.y}, {move_click_action.time}")
-            coord_window.destroy()
+            self.actions_list_widget.addItem(f"MoveClick: {move_click_action.x}, {move_click_action.y}, {move_click_action.time}")
             self.update_actions_history()
-
-        def add_mouse_drag():
+        elif coord_window.clickedButton() == add_mouse_drag_button:
             mouse_drag_action = MouseDrag(x, y, 1)
             self.actions.append(mouse_drag_action)
-            self.actions_listbox.insert(tk.END, f"MouseDrag: {mouse_drag_action.x}, {mouse_drag_action.y}, {mouse_drag_action.time}")
-            coord_window.destroy()
+            self.actions_list_widget.addItem(f"MouseDrag: {mouse_drag_action.x}, {mouse_drag_action.y}, {mouse_drag_action.time}")
             self.update_actions_history()
-        
-        ttk.Button(button_frame, text="Add Move Click", command=add_move_click, style="TButton").pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Add Move", command=add_move_action, style="TButton").pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Add Click", command=add_click_action, style="TButton").pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Add Mouse Drag", command=add_mouse_drag, style="TButton").pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Close", command=coord_window.destroy, style="TButton").pack(side=tk.LEFT, padx=5)
+

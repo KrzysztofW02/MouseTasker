@@ -544,7 +544,7 @@ class MainWindow(QMainWindow):
         if coord_window.clickedButton() == add_move_button:
             move_action = MouseMove(x, y, 1)
             self.actions.insert(insert_position, move_action)
-            self.actions_list_widget.insertItem(insert_position, f"Move: {move_action.x}, {move_action.y}, {move_action.time}")
+            self.actions_list_widget.insertItem(insert_position, f"Move: {move_action.x}, {move_action.y}, {move_action.time}s")
         elif coord_window.clickedButton() == add_click_button:
             click_action = MouseClick(x, y)
             self.actions.insert(insert_position, click_action)
@@ -552,10 +552,10 @@ class MainWindow(QMainWindow):
         elif coord_window.clickedButton() == add_move_click_button:
             move_click_action = MouseMoveClick(x, y, 1)
             self.actions.insert(insert_position, move_click_action)
-            self.actions_list_widget.insertItem(insert_position, f"MoveClick: {move_click_action.x}, {move_click_action.y}, {move_click_action.time}")
+            self.actions_list_widget.insertItem(insert_position, f"MoveClick: {move_click_action.x}, {move_click_action.y}, {move_click_action.time}s")
         elif coord_window.clickedButton() == add_mouse_drag_button:
             mouse_drag_action = MouseDrag(x, y, 1)
             self.actions.insert(insert_position, mouse_drag_action)
-            self.actions_list_widget.insertItem(insert_position, f"MouseDrag: {mouse_drag_action.x}, {mouse_drag_action.y}, {mouse_drag_action.time}")
+            self.actions_list_widget.insertItem(insert_position, f"MouseDrag: {mouse_drag_action.x}, {mouse_drag_action.y}, {mouse_drag_action.time}s")
 
         self.update_actions_history()

@@ -12,7 +12,7 @@ class MouseMove(MouseAction): # normal move without click
         self.time = time
 
     def __str__(self): # to copy or insert in correct form
-        return f"Move: {self.x}, {self.y}, {self.time}"
+        return f"Move: {self.x}, {self.y}, {self.time}s"
 
     def execute(self):
         pyautogui.moveTo(self.x, self.y, self.time)
@@ -45,7 +45,7 @@ class MouseMoveClick(MouseAction):
         self.time = time
 
     def __str__(self):
-       return f"MoveClick: {self.x}, {self.y}, {self.time}"
+       return f"MoveClick: {self.x}, {self.y}, {self.time}s"
 
     def execute(self):
         pyautogui.moveTo(self.x, self.y, self.time)
@@ -59,7 +59,7 @@ class MouseDrag(MouseAction):
         self.time = time
 
     def __str__(self):
-        return f"MouseDrag: {self.x}, {self.y}, {self.time}"
+        return f"MouseDrag: {self.x}, {self.y}, {self.time}s"
     
     def execute(self):
         pyautogui.dragTo(self.x, self.y, self.time, button='left')

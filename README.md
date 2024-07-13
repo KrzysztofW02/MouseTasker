@@ -1,9 +1,9 @@
 # MouseTasker
 
-MouseTasker is a PyQt5 application designed to automate mouse tasks. It allows users to record, save, and replay sequences of mouse actions.
+MouseTasker is an application designed to automate mouse tasks. It allows users to record, save, and replay sequences of mouse actions.
 
 
-![MouseTasker Screenshot](https://lh3.googleusercontent.com/u/0/drive-viewer/AKGpiharKEpwPGbwjDdy5zAJY68tbwoO8x0noLXgHd5RaZ9XmeYPKJEiPxe0w0uFOcrUXmcVv8sKvSLJCK3U7gEv5FAEHcDc8j_QM3E=w1920-h955-rw-v1)
+![MouseTasker Screenshot](https://lh3.googleusercontent.com/u/0/drive-viewer/AKGpihboHSgVwMEMEsDyl_yq6gFASD2La3DogjyH2wfqYe7LWEzl8wJO3MMaYMK3evC8hyRFSHpy9Q4hQRXdJO8RnI6k6KUO6U8qGlo=w1920-h955-rw-v1)
 
 ## Installation
 
@@ -22,7 +22,7 @@ For Windows systems:
 ```sh
 venv\Scripts\activate
 ```
-Than
+Then
 ```sh
 pip install -r requirements.txt
 ```

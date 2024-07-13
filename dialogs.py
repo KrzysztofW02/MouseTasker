@@ -1,4 +1,6 @@
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox
+from PyQt5.QtGui import QIntValidator, QDoubleValidator, QValidator
+from PyQt5.QtCore import QLocale
 
 class MoveDialog(QDialog):
     def __init__(self, parent=None, x=None, y=None, time=None):
@@ -9,6 +11,12 @@ class MoveDialog(QDialog):
         self.x_input = QLineEdit(self)
         self.y_input = QLineEdit(self)
         self.time_input = QLineEdit(self)
+
+        int_validator = QIntValidator(self)
+        double_validator = CustomDoubleValidator()
+        self.x_input.setValidator(int_validator)
+        self.y_input.setValidator(int_validator)
+        self.time_input.setValidator(double_validator)
         
         if x is not None:
             self.x_input.setText(str(x))
@@ -50,6 +58,10 @@ class ClickDialog(QDialog):
         self.x_input = QLineEdit(self)
         self.y_input = QLineEdit(self)
 
+        int_validator = QIntValidator(self)
+        self.x_input.setValidator(int_validator)
+        self.y_input.setValidator(int_validator)
+
         if x is not None:
             self.x_input.setText(str(x))
         if y is not None:
@@ -83,6 +95,9 @@ class WaitDialog(QDialog):
         self.layout = QVBoxLayout()
         self.time_input = QLineEdit(self)
 
+        double_validator = CustomDoubleValidator()
+        self.time_input.setValidator(double_validator)
+
         if time is not None:
             self.time_input.setText(str(time))
         
@@ -113,6 +128,12 @@ class MoveClickDialog(QDialog):
         self.x_input = QLineEdit(self)
         self.y_input = QLineEdit(self)
         self.time_input = QLineEdit(self)
+
+        int_validator = QIntValidator(self)
+        double_validator = CustomDoubleValidator()
+        self.x_input.setValidator(int_validator)
+        self.y_input.setValidator(int_validator)
+        self.time_input.setValidator(double_validator)
 
         if x is not None:
             self.x_input.setText(str(x))
@@ -152,6 +173,12 @@ class MouseDragDialog(QDialog):
         self.y_input = QLineEdit(self)
         self.time_input = QLineEdit(self)
 
+        int_validator = QIntValidator(self)
+        double_validator = CustomDoubleValidator()
+        self.x_input.setValidator(int_validator)
+        self.y_input.setValidator(int_validator)
+        self.time_input.setValidator(double_validator)
+
         if x is not None:
             self.x_input.setText(str(x))
         if y is not None:
@@ -179,3 +206,14 @@ class MouseDragDialog(QDialog):
             return
         self.result = (int(self.x_input.text()), int(self.y_input.text()), float(self.time_input.text()))
         super().accept()
+
+
+class CustomDoubleValidator(QDoubleValidator):
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.setLocale(QLocale(QLocale.English))
+
+    def validate(self, string, pos):
+        if 'e' in string.lower() or ',' in string:
+            return (QValidator.Invalid, string, pos)
+        return super().validate(string, pos)

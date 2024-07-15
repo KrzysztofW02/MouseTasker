@@ -450,7 +450,7 @@ class MainWindow(QMainWindow):
         
     
     def select_all_actions(self):
-        self.actions_list_widget.clearSelection()  # Wyczyść istniejące zaznaczenia
+        self.actions_list_widget.clearSelection() 
 
         for i in range(self.actions_list_widget.count()):
             item = self.actions_list_widget.item(i)
@@ -498,8 +498,6 @@ class MainWindow(QMainWindow):
         if self.actions_history:
             self.actions = self.actions_history.pop()
             self.refresh_actions_listbox()
-        else:
-            QMessageBox.information(self, "Info", "Actions history is empty.")
 
 
     def update_actions_history(self):

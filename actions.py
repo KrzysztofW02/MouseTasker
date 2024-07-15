@@ -5,34 +5,34 @@ class MouseAction:
     def execute(self):
         pass
 
-class MouseMove(MouseAction): # normal move without click
+class MouseMove(MouseAction):
     def __init__(self, x, y, time):
         self.x = x
         self.y = y
         self.time = time
 
-    def __str__(self): # to copy or insert in correct form
+    def __str__(self): 
         return f"Move: {self.x}, {self.y}, {self.time}s"
 
     def execute(self):
         pyautogui.moveTo(self.x, self.y, self.time)
 
-class MouseClick(MouseAction): # click on specific position
+class MouseClick(MouseAction): 
     def __init__(self, x, y):
         self.x = x
         self.y = y
 
-    def __str__(self): # to copy or insert in correct form
+    def __str__(self): 
         return f"Click: {self.x}, {self.y}"
 
     def execute(self):
         pyautogui.click(self.x, self.y)
 
-class Wait(MouseAction): # wait for specific seconds
+class Wait(MouseAction): 
     def __init__(self, time):
         self.time = time
 
-    def __str__(self): # to copy or insert in correct form
+    def __str__(self): 
         return f"Wait: {self.time}s"
 
     def execute(self):

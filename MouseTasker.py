@@ -72,6 +72,9 @@ class MainWindow(QMainWindow):
         shortcut_run_stop_loop_actions = QShortcut(QKeySequence('F2'), self)
         shortcut_run_stop_loop_actions.activated.connect(self.toogle_run_stop_loop_actions)
 
+        shortcut_advanced_options = QShortcut(QKeySequence('F3'), self)
+        shortcut_advanced_options.activated.connect(self.open_advanced_options_dialog)
+
         shortcut_show_shortcuts = QShortcut(QKeySequence('F5'), self)
         shortcut_show_shortcuts.activated.connect(self.show_shortcuts)
 
@@ -504,15 +507,16 @@ class MainWindow(QMainWindow):
             item.setSelected(True)
     
     def show_shortcuts(self):
-        message = "Copy: Ctrl+C\n" \
-                  "Undo: Ctrl+Z\n" \
-                  "Save: Ctrl+S\n" \
-                  "Paste: Ctrl+V\n" \
-                  "RUN / STOP: F1\n" \
-                  "RUN LOOP / STOP: F2\n" \
-                  "Check Coordinates: C\n" \
-                  "Load: Ctrl+L\n" \
-                  "Delete: Delete\n" \
+        message = "Copy: Ctrl+C      " \
+                  "Undo: Ctrl+Z\n\n" \
+                  "Save: Ctrl+S      " \
+                  "Paste: Ctrl+V\n\n" \
+                  "RUN / STOP: F1      " \
+                  "RUN LOOP / STOP: F2\n\n" \
+                  "Advanced Options: F3      " \
+                  "Check Coordinates: C\n\n" \
+                  "Load: Ctrl+L      " \
+                  "Delete: Delete\n\n" \
                   "Show Shortcuts: F5"
         QMessageBox.information(self, "Shortcuts", message)
 

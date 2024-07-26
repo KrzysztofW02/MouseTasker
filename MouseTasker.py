@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QLis
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from actions import MouseMove, MouseClick, Wait, MouseMoveClick, MouseDrag
-from dialogs import MoveDialog, ClickDialog, WaitDialog, MoveClickDialog, MouseDragDialog, LoopDialog, AdvancedOptionsDialog
+from dialogs import MoveDialog, ClickDialog, WaitDialog, MoveClickDialog, MouseDragDialog, LoopDialog, AdvancedOptionsDialog, SetupWaitRangeDialog
 import pyautogui
 import copy
 import random
@@ -570,6 +570,13 @@ class MainWindow(QMainWindow):
         dialog = AdvancedOptionsDialog(self, self)
         dialog.exec_()
 
+    def open_setup_wait_range_dialog(self):
+        dialog = SetupWaitRangeDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            min_time, max_time = dialog.result
+            self.random_time_in_wait(min_time, max_time)
+
+
     def random_time_in_moves_movesclicks(self):
         if not self.actions:
             QMessageBox.warning(self, "Warning", "No actions to randomize time for.")
@@ -611,13 +618,14 @@ class MainWindow(QMainWindow):
                 action.y = random.randint(y_min, y_max)
         self.refresh_actions_listbox()
 
-    def random_time_in_wait(self):
+    def random_time_in_wait(self, min_time, max_time):
         if not self.actions:
             QMessageBox.warning(self, "Warning", "No actions to randomize time for.")
             return
-        for actions in self.actions:
-            if isinstance(actions, Wait):
-                actions.time = random.uniform(1, 2)
+
+        for action in self.actions:
+            if isinstance(action, Wait):
+                action.time = random.uniform(min_time, max_time)
         self.refresh_actions_listbox()
 
     def refresh_actions_listbox(self):

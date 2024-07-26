@@ -56,7 +56,7 @@ class MainWindow(QMainWindow):
 
         self.actions_running = False
 
-    def setup_shortcuts(self): #####################SHORTCUTS
+    def setup_shortcuts(self): 
         shortcut_check_coordinates = QShortcut(QKeySequence('C'), self)
         shortcut_check_coordinates.activated.connect(self.check_coordinates)
 
@@ -547,9 +547,15 @@ class MainWindow(QMainWindow):
                 insert_position += 1
 
             self.update_actions_history()
+    
     def undo_action(self):
-        if self.actions_history:
-            self.actions = self.actions_history.pop()
+        if len(self.actions_history) > 1: 
+            self.actions_history.pop()  
+            self.actions = self.actions_history[-1]  
+            self.refresh_actions_listbox()
+        elif len(self.actions_history) == 1:
+            self.actions = []  
+            self.actions_history = []  
             self.refresh_actions_listbox()
 
 
@@ -608,6 +614,7 @@ class MainWindow(QMainWindow):
         for action in self.actions:
             if isinstance(action, (MouseMove, MouseMoveClick)):
                 action.time = random.uniform(min_time, max_time)
+        self.update_actions_history()        
         self.refresh_actions_listbox()
 
 
@@ -624,6 +631,7 @@ class MainWindow(QMainWindow):
             if isinstance(action, (MouseMove, MouseMoveClick)):
                 action.x = random.randint(x_min, x_max)
                 action.y = random.randint(y_min, y_max)
+        self.update_actions_history()   
         self.refresh_actions_listbox()
 
     def random_coord_in_clicks(self, x_min=0, x_max=None, y_min=0, y_max=None):
@@ -639,6 +647,7 @@ class MainWindow(QMainWindow):
             if isinstance(action, MouseClick):
                 action.x = random.randint(x_min, x_max)
                 action.y = random.randint(y_min, y_max)
+        self.update_actions_history()   
         self.refresh_actions_listbox()
 
     def random_time_in_wait(self, min_time, max_time):
@@ -649,6 +658,7 @@ class MainWindow(QMainWindow):
         for action in self.actions:
             if isinstance(action, Wait):
                 action.time = random.uniform(min_time, max_time)
+        self.update_actions_history()   
         self.refresh_actions_listbox()
 
     def refresh_actions_listbox(self):

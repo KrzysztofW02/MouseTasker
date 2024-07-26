@@ -2,11 +2,10 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QLis
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from actions import MouseMove, MouseClick, Wait, MouseMoveClick, MouseDrag
-from dialogs import MoveDialog, ClickDialog, WaitDialog, MoveClickDialog, MouseDragDialog, LoopDialog
+from dialogs import MoveDialog, ClickDialog, WaitDialog, MoveClickDialog, MouseDragDialog, LoopDialog, AdvancedOptionsDialog
 import pyautogui
 import copy
-
-
+import random
 class ActionExecutor(QThread):
     update_action_index = pyqtSignal(int)
     action_completed = pyqtSignal()
@@ -174,6 +173,10 @@ class MainWindow(QMainWindow):
         self.help_button = QPushButton("Help")
         self.help_button.clicked.connect(self.show_shortcuts)
         self.bottom_buttons_layout.addWidget(self.help_button)
+
+        self.Advanced_Options_button = QPushButton("Advanced Options")
+        self.Advanced_Options_button.clicked.connect(self.open_advanced_options_dialog)
+        self.bottom_buttons_layout.addWidget(self.Advanced_Options_button)
 
     #Menu bar
     def create_menu(self):
@@ -506,6 +509,7 @@ class MainWindow(QMainWindow):
                   "Save: Ctrl+S\n" \
                   "Paste: Ctrl+V\n" \
                   "RUN / STOP: F1\n" \
+                  "RUN LOOP / STOP: F2\n" \
                   "Check Coordinates: C\n" \
                   "Load: Ctrl+L\n" \
                   "Delete: Delete\n" \
@@ -560,6 +564,46 @@ class MainWindow(QMainWindow):
                 self.actions_list_widget.addItem(f"MoveClick: {action.x}, {action.y}, {action.time}")
             elif isinstance(action, MouseDrag):
                 self.actions_list_widget.addItem(f"MouseDrag: {action.x}, {action.y}, {action.time}")
+
+
+    def open_advanced_options_dialog(self):
+        dialog = AdvancedOptionsDialog(self, self)
+        dialog.exec_()
+
+    def random_time_in_moves_movesclicks(self):
+        if not self.actions:
+            QMessageBox.warning(self, "Warning", "No actions to randomize time for.")
+            return
+
+        for action in self.actions:
+            if isinstance(action, (MouseMove, MouseMoveClick)):
+                action.time = random.uniform(1, 2)
+        self.refresh_actions_listbox()
+
+
+    def random_coord_in_moves_moveclicks(self):
+        print ("Random move")
+
+    def random_coord_in_clicks(self):
+        print ("Random Click")
+
+    def random_time_in_wait(self):
+        print ("Random Wait")
+
+    def refresh_actions_listbox(self):
+        self.actions_list_widget.clear()
+        for action in self.actions:
+            if isinstance(action, MouseMove):
+                self.actions_list_widget.addItem(f"Move: {action.x}, {action.y}, {action.time:.2f}s")
+            elif isinstance(action, MouseClick):
+                self.actions_list_widget.addItem(f"Click: {action.x}, {action.y}")
+            elif isinstance(action, Wait):
+                self.actions_list_widget.addItem(f"Wait: {action.time:.2f}s")
+            elif isinstance(action, MouseMoveClick):
+                self.actions_list_widget.addItem(f"MoveClick: {action.x}, {action.y}, {action.time:.2f}s")
+            elif isinstance(action, MouseDrag):
+                self.actions_list_widget.addItem(f"MouseDrag: {action.x}, {action.y}, {action.time:.2f}s")
+
 
     def check_coordinates(self):
         x, y = pyautogui.position()

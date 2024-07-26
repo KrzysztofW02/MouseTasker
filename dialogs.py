@@ -239,6 +239,48 @@ class LoopDialog(QDialog):
         except ValueError:
             QMessageBox.warning(self, "Invalid Input", "Please enter a positive integer.")
 
+class AdvancedOptionsDialog(QDialog):
+    def __init__(self, parent=None, main_application=None):
+        super().__init__(parent)
+        self.main_application = main_application
+        self.setWindowTitle("Advanced Options")
+        layout = QVBoxLayout()
+
+        self.random_time_in_moves_movesclicks_button = QPushButton("Random Time in Moves, MoveClicks")
+        self.random_time_in_moves_movesclicks_button.clicked.connect(self.random_time_in_moves_movesclicks)
+        layout.addWidget(self.random_time_in_moves_movesclicks_button)
+
+        self.random_coord_in_moves_moveclicks_button = QPushButton("Random coordinates in Moves, MoveClicks")
+        self.random_coord_in_moves_moveclicks_button.clicked.connect(self.random_coord_in_moves_moveclicks)
+        layout.addWidget(self.random_coord_in_moves_moveclicks_button)
+
+        self.random_coord_in_clicks_button = QPushButton("Random coordinates in Clicks")
+        self.random_coord_in_clicks_button.clicked.connect(self.random_coord_in_clicks)
+        layout.addWidget(self.random_coord_in_clicks_button)
+
+        self.random_time_in_wait_button = QPushButton("Random time in Waits")
+        self.random_time_in_wait_button.clicked.connect(self.random_time_in_wait)
+        layout.addWidget(self.random_time_in_wait_button)
+
+        self.setLayout(layout)
+
+    def random_time_in_moves_movesclicks(self):
+        if self.main_application:
+            self.main_application.random_time_in_moves_movesclicks()
+
+    def random_coord_in_moves_moveclicks(self):
+        if self.main_application:
+            self.main_application.random_coord_in_moves_moveclicks()
+
+    def random_coord_in_clicks(self):
+        if self.main_application:
+            self.main_application.random_coord_in_clicks()
+
+    def random_time_in_wait(self):
+        if self.main_application:
+            self.main_application.random_time_in_wait()
+
+
 class CustomDoubleValidator(QDoubleValidator):
     def __init__(self, *args):
         super().__init__(*args)

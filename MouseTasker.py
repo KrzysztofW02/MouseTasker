@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QListWidget, QAction, QMenu, QMenuBar, QHBoxLayout, QFileDialog, QMessageBox, QDialog, QShortcut, QLabel
+from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QListWidget, QAction, QMenu, QMenuBar, QHBoxLayout, QFileDialog, QMessageBox, QDialog, QShortcut, QLabel, QAbstractItemView
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from actions import MouseMove, MouseClick, Wait, MouseMoveClick, MouseDrag
@@ -146,7 +146,7 @@ class MainWindow(QMainWindow):
 
         self.actions_list_widget = QListWidget()
         self.actions_list_widget.itemDoubleClicked.connect(self.edit_action)
-        self.actions_list_widget.setSelectionMode(QListWidget.MultiSelection)
+        self.actions_list_widget.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.actions_list_widget.setStyleSheet("QListWidget { font-size: 11pt; }")
         self.layout.addWidget(self.actions_list_widget)
 

@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QHBoxLayout
 from PyQt5.QtGui import QIntValidator, QDoubleValidator, QValidator
 from PyQt5.QtCore import QLocale
 
@@ -207,6 +207,37 @@ class MouseDragDialog(QDialog):
         self.result = (int(self.x_input.text()), int(self.y_input.text()), float(self.time_input.text()))
         super().accept()
 
+class LoopDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Run in Loop")
+        self.layout = QVBoxLayout()
+
+        self.label = QLabel("Enter number of loops:")
+        self.layout.addWidget(self.label)
+
+        self.input_field = QLineEdit()
+        self.layout.addWidget(self.input_field)
+
+        self.button_box = QHBoxLayout()
+        self.ok_button = QPushButton("OK")
+        self.ok_button.clicked.connect(self.accept)
+        self.cancel_button = QPushButton("Cancel")
+        self.cancel_button.clicked.connect(self.reject)
+        self.button_box.addWidget(self.ok_button)
+        self.button_box.addWidget(self.cancel_button)
+
+        self.layout.addLayout(self.button_box)
+        self.setLayout(self.layout)
+
+    def accept(self):
+        try:
+            self.loop_count = int(self.input_field.text())
+            if self.loop_count <= 0:
+                raise ValueError
+            super().accept()
+        except ValueError:
+            QMessageBox.warning(self, "Invalid Input", "Please enter a positive integer.")
 
 class CustomDoubleValidator(QDoubleValidator):
     def __init__(self, *args):

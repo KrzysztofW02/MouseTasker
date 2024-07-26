@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QLis
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from actions import MouseMove, MouseClick, Wait, MouseMoveClick, MouseDrag
-from dialogs import MoveDialog, ClickDialog, WaitDialog, MoveClickDialog, MouseDragDialog
+from dialogs import MoveDialog, ClickDialog, WaitDialog, MoveClickDialog, MouseDragDialog, LoopDialog
 import pyautogui
 import copy
 
@@ -11,20 +11,24 @@ class ActionExecutor(QThread):
     update_action_index = pyqtSignal(int)
     action_completed = pyqtSignal()
 
-    def __init__(self, actions, start_index=0):
+    def __init__(self, actions, start_index=0, loop_count=1):
         super().__init__()
         self.actions = actions
         self.start_index = start_index
         self.running = True
+        self.loop_count = loop_count
 
     def run(self):
-        current_action_index = 0
-        while self.running and current_action_index < len(self.actions):
-            adjusted_index = current_action_index + self.start_index
-            self.update_action_index.emit(adjusted_index)
-            action = self.actions[current_action_index]
-            action.execute()
-            current_action_index += 1
+        for _ in range(self.loop_count):
+            if not self.running:
+                break
+            current_action_index = 0
+            while self.running and current_action_index < len(self.actions):
+                adjusted_index = current_action_index + self.start_index
+                self.update_action_index.emit(adjusted_index)
+                action = self.actions[current_action_index]
+                action.execute()
+                current_action_index += 1
         self.action_completed.emit()
 
     def stop_execution(self):
@@ -65,6 +69,9 @@ class MainWindow(QMainWindow):
 
         shortcut_run_stop_actions = QShortcut(QKeySequence('F1'), self)
         shortcut_run_stop_actions.activated.connect(self.toggle_run_stop_actions)
+
+        shortcut_run_stop_loop_actions = QShortcut(QKeySequence('F2'), self)
+        shortcut_run_stop_loop_actions.activated.connect(self.toogle_run_stop_loop_actions)
 
         shortcut_show_shortcuts = QShortcut(QKeySequence('F5'), self)
         shortcut_show_shortcuts.activated.connect(self.show_shortcuts)
@@ -121,7 +128,18 @@ class MainWindow(QMainWindow):
         self.top_buttons_layout.addWidget(self.add_mouse_drag_button)
 
         self.run_button = QPushButton("Run")
-        self.run_button.clicked.connect(self.run_actions)
+        self.run_menu = QMenu()
+        self.run_action = QAction("Run", self)
+        self.run_loop_action = QAction("Run in Loop", self)
+
+        self.run_menu.addAction(self.run_action)
+        self.run_menu.addAction(self.run_loop_action)
+
+        self.run_action.triggered.connect(self.run_actions)
+        self.run_loop_action.triggered.connect(self.run_actions_in_loop)
+        
+        self.run_button.setMenu(self.run_menu)
+        
         self.top_buttons_layout.addWidget(self.run_button)
 
         self.actions_list_widget = QListWidget()
@@ -326,6 +344,12 @@ class MainWindow(QMainWindow):
         else:
             self.stop_actions()
 
+    def toogle_run_stop_loop_actions(self):
+        if not self.actions_running:
+            self.run_actions_in_loop()
+        else:
+            self.stop_actions()
+
     def run_actions(self):
         if self.actions_running:
             QMessageBox.warning(self, "Already Running", "Actions are already running.")
@@ -347,6 +371,26 @@ class MainWindow(QMainWindow):
         self.executor_thread.action_completed.connect(self.on_actions_completed)
         self.executor_thread.start()
         self.actions_running = True
+
+    def run_actions_in_loop(self):
+        if self.actions_running:
+            QMessageBox.warning(self, "Already Running", "Actions are already running.")
+            return
+
+        actions_to_execute = self.actions
+        if not actions_to_execute:
+            QMessageBox.warning(self, "No Actions", "There are no actions to execute.")
+            return
+        
+        dialog = LoopDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            loop_count = dialog.loop_count
+
+            self.executor_thread = ActionExecutor(actions_to_execute, loop_count=loop_count)
+            self.executor_thread.update_action_index.connect(self.highlight_action)
+            self.executor_thread.action_completed.connect(self.on_actions_completed)
+            self.executor_thread.start()
+            self.actions_running = True
 
 
     def stop_actions(self):

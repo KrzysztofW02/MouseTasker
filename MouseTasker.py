@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QLis
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from actions import MouseMove, MouseClick, Wait, MouseMoveClick, MouseDrag
-from dialogs import MoveDialog, ClickDialog, WaitDialog, MoveClickDialog, MouseDragDialog, LoopDialog, AdvancedOptionsDialog, SetupWaitRangeDialog, SetupMoveClickTimeRangeDialog
+from dialogs import MoveDialog, ClickDialog, WaitDialog, MoveClickDialog, MouseDragDialog, LoopDialog, AdvancedOptionsDialog, SetupWaitRangeDialog, SetupMoveClickTimeRangeDialog, SetupCoordRangeDialog, SetupClickCoordRangeDialog
 import pyautogui
 import copy
 import random
@@ -582,6 +582,18 @@ class MainWindow(QMainWindow):
             min_time, max_time = dialog.result
             self.random_time_in_moves_movesclicks(min_time, max_time)
 
+    def open_setup_move_coord_dialog(self):
+        dialog = SetupCoordRangeDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            x_min, x_max, y_min, y_max = dialog.result
+            self.random_coord_in_moves_moveclicks(x_min, x_max, y_min, y_max)
+
+    def open_setup_click_coord_dialog(self):
+        dialog = SetupClickCoordRangeDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            x_min, x_max, y_min, y_max = dialog.result
+            self.random_coord_in_clicks(x_min, x_max, y_min, y_max)
+
 
     def random_time_in_moves_movesclicks(self, min_time, max_time):
         if not self.actions:
@@ -594,7 +606,7 @@ class MainWindow(QMainWindow):
         self.refresh_actions_listbox()
 
 
-    def random_coord_in_moves_moveclicks(self, x_min=0, x_max=None, y_min=0, y_max=None):
+    def random_coord_in_moves_moveclicks(self, x_min, x_max, y_min, y_max):
         if not self.actions:
             QMessageBox.warning(self, "Warning", "No actions to randomize coordinates for.")
             return

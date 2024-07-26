@@ -581,14 +581,44 @@ class MainWindow(QMainWindow):
         self.refresh_actions_listbox()
 
 
-    def random_coord_in_moves_moveclicks(self):
-        print ("Random move")
+    def random_coord_in_moves_moveclicks(self, x_min=0, x_max=None, y_min=0, y_max=None):
+        if not self.actions:
+            QMessageBox.warning(self, "Warning", "No actions to randomize coordinates for.")
+            return
 
-    def random_coord_in_clicks(self):
-        print ("Random Click")
+        screen_width, screen_height = pyautogui.size()
+        x_max = x_max if x_max is not None else screen_width
+        y_max = y_max if y_max is not None else screen_height
+
+        for action in self.actions:
+            if isinstance(action, (MouseMove, MouseMoveClick)):
+                action.x = random.randint(x_min, x_max)
+                action.y = random.randint(y_min, y_max)
+        self.refresh_actions_listbox()
+
+    def random_coord_in_clicks(self, x_min=0, x_max=None, y_min=0, y_max=None):
+        if not self.actions:
+            QMessageBox.warning(self, "Warning", "No actions to randomize coordinates for.")
+            return
+        
+        screen_width, screen_height = pyautogui.size()
+        x_max = x_max if x_max is not None else screen_width
+        y_max = y_max if y_max is not None else screen_height
+
+        for action in self.actions:
+            if isinstance(action, MouseClick):
+                action.x = random.randint(x_min, x_max)
+                action.y = random.randint(y_min, y_max)
+        self.refresh_actions_listbox()
 
     def random_time_in_wait(self):
-        print ("Random Wait")
+        if not self.actions:
+            QMessageBox.warning(self, "Warning", "No actions to randomize time for.")
+            return
+        for actions in self.actions:
+            if isinstance(actions, Wait):
+                actions.time = random.uniform(1, 2)
+        self.refresh_actions_listbox()
 
     def refresh_actions_listbox(self):
         self.actions_list_widget.clear()

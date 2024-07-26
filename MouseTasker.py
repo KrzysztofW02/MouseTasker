@@ -146,7 +146,7 @@ class MainWindow(QMainWindow):
 
         self.actions_list_widget = QListWidget()
         self.actions_list_widget.itemDoubleClicked.connect(self.edit_action)
-        self.actions_list_widget.setSelectionMode(QListWidget.SingleSelection)
+        self.actions_list_widget.setSelectionMode(QListWidget.MultiSelection)
         self.actions_list_widget.setStyleSheet("QListWidget { font-size: 11pt; }")
         self.layout.addWidget(self.actions_list_widget)
 
@@ -339,9 +339,11 @@ class MainWindow(QMainWindow):
     def delete_action(self):
         selected_items = self.actions_list_widget.selectedItems()
         if selected_items:
-            selected_index = self.actions_list_widget.row(selected_items[0])
-            del self.actions[selected_index]
-            self.actions_list_widget.takeItem(selected_index)
+            selected_indices = sorted([self.actions_list_widget.row(item) for item in selected_items], reverse=True)
+            for index in selected_indices:
+                del self.actions[index]
+                self.actions_list_widget.takeItem(index)
+            
             self.update_actions_history()
 
     def toggle_run_stop_actions(self):
@@ -521,31 +523,30 @@ class MainWindow(QMainWindow):
         QMessageBox.information(self, "Shortcuts", message)
 
     def copy_action(self):
-        selected_index = self.actions_list_widget.currentRow()
-        if selected_index != -1:
-            self.copied_action = copy.deepcopy(self.actions[selected_index])
-        
+        selected_items = self.actions_list_widget.selectedItems()
+        if selected_items:
+            self.copied_actions = [copy.deepcopy(self.actions[self.actions_list_widget.row(item)]) for item in selected_items]
 
     def paste_action(self):
-        if self.copied_action is not None:
+        if hasattr(self, 'copied_actions') and self.copied_actions:
             selected_index = self.actions_list_widget.currentRow()
-            if selected_index != -1:
-                insert_position = selected_index + 1
-            else:
-                insert_position = len(self.actions)
-            self.actions.insert(insert_position, self.copied_action)
-            if isinstance(self.copied_action, MouseMove):
-                self.actions_list_widget.insertItem(insert_position, f"Move: {self.copied_action.x}, {self.copied_action.y}, {self.copied_action.time}")
-            elif isinstance(self.copied_action, MouseClick):
-                self.actions_list_widget.insertItem(insert_position, f"Click: {self.copied_action.x}, {self.copied_action.y}")
-            elif isinstance(self.copied_action, Wait):
-                self.actions_list_widget.insertItem(insert_position, f"Wait: {self.copied_action.time}s")
-            elif isinstance(self.copied_action, MouseMoveClick):
-                self.actions_list_widget.insertItem(insert_position, f"MoveClick: {self.copied_action.x}, {self.copied_action.y}, {self.copied_action.time}")
-            elif isinstance(self.copied_action, MouseDrag):
-                self.actions_list_widget.insertItem(insert_position, f"MouseDrag: {self.copied_action.x}, {self.copied_action.y}, {self.copied_action.time}")
-            self.update_actions_history()
+            insert_position = selected_index + 1 if selected_index != -1 else len(self.actions)
 
+            for action in self.copied_actions:
+                self.actions.insert(insert_position, action)
+                if isinstance(action, MouseMove):
+                    self.actions_list_widget.insertItem(insert_position, f"Move: {action.x}, {action.y}, {action.time}")
+                elif isinstance(action, MouseClick):
+                    self.actions_list_widget.insertItem(insert_position, f"Click: {action.x}, {action.y}")
+                elif isinstance(action, Wait):
+                    self.actions_list_widget.insertItem(insert_position, f"Wait: {action.time}s")
+                elif isinstance(action, MouseMoveClick):
+                    self.actions_list_widget.insertItem(insert_position, f"MoveClick: {action.x}, {action.y}, {action.time}")
+                elif isinstance(action, MouseDrag):
+                    self.actions_list_widget.insertItem(insert_position, f"MouseDrag: {action.x}, {action.y}, {action.time}")
+                insert_position += 1
+
+            self.update_actions_history()
     def undo_action(self):
         if self.actions_history:
             self.actions = self.actions_history.pop()

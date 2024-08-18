@@ -53,6 +53,7 @@ cover/
 
 #To ignore the files created by save action
 *.txt
+!description.txt
 
 # Translations
 *.mo

@@ -1,8 +1,10 @@
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QListWidget, QAction, QMenu, QMenuBar, QHBoxLayout, QFileDialog, QMessageBox, QDialog, QShortcut, QLabel, QAbstractItemView
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5 import QtGui
 from actions import MouseMove, MouseClick, Wait, MouseMoveClick, MouseDrag
 from dialogs import MoveDialog, ClickDialog, WaitDialog, MoveClickDialog, MouseDragDialog, LoopDialog, AdvancedOptionsDialog, SetupWaitRangeDialog, SetupMoveClickTimeRangeDialog, SetupCoordRangeDialog, SetupClickCoordRangeDialog
+from chat import ChatDialog
 import pyautogui
 import copy
 import random
@@ -42,6 +44,8 @@ class MainWindow(QMainWindow):
         self.executor_thread = None
         self.copied_action = None
         self.actions_history = []
+        self.chat_dialog = None
+        self.setWindowIcon(QtGui.QIcon("icon.ico"))
 
         self.setup_shortcuts()
 
@@ -128,6 +132,10 @@ class MainWindow(QMainWindow):
         self.add_mouse_drag_button = QPushButton("Add Mouse Drag")
         self.add_mouse_drag_button.clicked.connect(self.add_mouse_drag)
         self.top_buttons_layout.addWidget(self.add_mouse_drag_button)
+
+        self.chat_button = QPushButton("Open Chat")
+        self.chat_button.clicked.connect(self.open_chat_dialog)
+        self.top_buttons_layout.addWidget(self.chat_button)
 
         self.run_button = QPushButton("Run")
         self.run_menu = QMenu()
@@ -297,6 +305,13 @@ class MainWindow(QMainWindow):
             self.actions.insert(insert_position, action)
             self.actions_list_widget.insertItem(insert_position, str(action))
             self.update_actions_history()
+
+    def open_chat_dialog(self):
+        if self.chat_dialog is None:
+            self.chat_dialog = ChatDialog(self)
+        self.chat_dialog.show()
+        self.chat_dialog.raise_()
+        self.chat_dialog.activateWindow()
 
 
     def edit_action(self):

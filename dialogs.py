@@ -262,6 +262,10 @@ class AdvancedOptionsDialog(QDialog):
         self.random_time_in_wait_button.clicked.connect(self.random_time_in_wait)
         layout.addWidget(self.random_time_in_wait_button)
 
+        self.random_coord_in_moves_moveclicks_button2 = QPushButton("Change coordinates in Moves, MoveClicks")
+        self.random_coord_in_moves_moveclicks_button2.clicked.connect(self.change_coord_in_moves_moveclicks)
+        layout.addWidget(self.random_coord_in_moves_moveclicks_button2)
+
         self.setLayout(layout)
 
     def random_time_in_moves_movesclicks(self):
@@ -279,6 +283,10 @@ class AdvancedOptionsDialog(QDialog):
     def random_time_in_wait(self):
         if self.main_application:
             self.main_application.open_setup_wait_range_dialog()
+
+    def change_coord_in_moves_moveclicks(self):
+        if self.main_application:
+            self.main_application.open_setup_coord_range_dialog()
 
 class SetupWaitRangeDialog(QDialog):
     def __init__(self, parent=None):
@@ -457,6 +465,40 @@ class SetupClickCoordRangeDialog(QDialog):
             self.result = (min_x, max_x, min_y, max_y)
         except ValueError as e:
             QMessageBox.warning(self, "Warning", f"Invalid input: {e}")
+            return
+        super().accept()
+
+
+class SetupMoveCoordDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Setup Move, MoveClicks Coordinates")
+        self.layout = QVBoxLayout()
+        
+        self.x_input = QLineEdit(self)
+        
+        int_validator = QIntValidator(self)
+        self.x_input.setValidator(int_validator)
+        
+        self.layout.addWidget(QLabel("Range:"))
+        self.layout.addWidget(self.x_input)
+        
+        self.ok_button = QPushButton("OK")
+        self.ok_button.clicked.connect(self.accept)
+        self.layout.addWidget(self.ok_button)
+        
+        self.setLayout(self.layout)
+        self.result = None
+    
+    def accept(self):
+        if not self.x_input.text():
+            QMessageBox.warning(self, "Warning", "All fields must be filled out.")
+            return
+        try:
+            x = int(self.x_input.text())
+            self.result = (x)
+        except ValueError:
+            QMessageBox.warning(self, "Warning", "Invalid input.")
             return
         super().accept()
 

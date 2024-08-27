@@ -3,7 +3,7 @@ from PyQt5.QtGui import QKeySequence
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5 import QtGui
 from actions import MouseMove, MouseClick, Wait, MouseMoveClick, MouseDrag
-from dialogs import MoveDialog, ClickDialog, WaitDialog, MoveClickDialog, MouseDragDialog, LoopDialog, AdvancedOptionsDialog, SetupWaitRangeDialog, SetupMoveClickTimeRangeDialog, SetupCoordRangeDialog, SetupClickCoordRangeDialog
+from dialogs import MoveDialog, ClickDialog, WaitDialog, MoveClickDialog, MouseDragDialog, LoopDialog, AdvancedOptionsDialog, SetupWaitRangeDialog, SetupMoveClickTimeRangeDialog, SetupCoordRangeDialog, SetupClickCoordRangeDialog, SetupMoveCoordDialog
 from chat import ChatDialog
 import pyautogui
 import copy
@@ -620,6 +620,12 @@ class MainWindow(QMainWindow):
             x_min, x_max, y_min, y_max = dialog.result
             self.random_coord_in_clicks(x_min, x_max, y_min, y_max)
 
+    def open_setup_coord_range_dialog(self):
+        dialog = SetupMoveCoordDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            x = dialog.result
+            self.change_coord_in_moves_moveclicks(x)
+
 
     def random_time_in_moves_movesclicks(self, min_time, max_time):
         if not self.actions:
@@ -674,6 +680,18 @@ class MainWindow(QMainWindow):
             if isinstance(action, Wait):
                 action.time = random.uniform(min_time, max_time)
         self.update_actions_history()   
+        self.refresh_actions_listbox()
+
+    def change_coord_in_moves_moveclicks(self, x):
+        if not self.actions: 
+            QMessageBox.warning(self, "Warning", "No actions to change coordinates for.")
+            return
+        
+        for action in self.actions:
+            if isinstance(action, (MouseMove, MouseMoveClick)):
+                action.x = action.x + random.randint(-x, x)
+                action.y = action.y + random.randint(-x, x)
+        self.update_actions_history()
         self.refresh_actions_listbox()
 
     def refresh_actions_listbox(self):

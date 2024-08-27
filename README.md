@@ -3,7 +3,7 @@
 MouseTasker is an application designed to automate mouse tasks. It allows users to record, save, and replay sequences of mouse actions.
 
 
-![MouseTasker Screenshot](https://lh3.googleusercontent.com/u/0/drive-viewer/AKGpihboHSgVwMEMEsDyl_yq6gFASD2La3DogjyH2wfqYe7LWEzl8wJO3MMaYMK3evC8hyRFSHpy9Q4hQRXdJO8RnI6k6KUO6U8qGlo=w1920-h955-rw-v1)
+![MouseTasker Screenshot](https://drive.google.com/uc?export=view&id=1C6CAHBLAO72aun3AdOTlvFBJtqV0u5LI)
 
 ## Installation
 
@@ -26,12 +26,20 @@ Then
 ```sh
 pip install -r requirements.txt
 ```
-
 ## Usage
 
 To start MouseTasker, navigate to the project directory and run:
 
 python main.py
+
+## AI CHAT 
+
+If you're unsure how to use the app, you can click on button "Open Chat" and ask a question in the chat, which will guide you on how to do something.
+
+![MouseTasker Screenshot](https://drive.google.com/uc?export=view&id=18NzD1Ab1vXUfIFHD3TuEJAztLugErZGe)
+
+To use the chat, you'll need to obtain a free API key from [https://console.groq.com/keys](https://console.groq.com/keys) and set it as the environment variable `GROQ_API_KEY`.
+
 
 ## Viewing Shortcuts
 

@@ -3,7 +3,7 @@ from PyQt5.QtGui import QKeySequence
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5 import QtGui
 from actions import MouseMove, MouseClick, Wait, MouseMoveClick, MouseDrag
-from dialogs import MoveDialog, ClickDialog, WaitDialog, MoveClickDialog, MouseDragDialog, LoopDialog, AdvancedOptionsDialog, SetupWaitRangeDialog, SetupMoveClickTimeRangeDialog, SetupCoordRangeDialog, SetupClickCoordRangeDialog, SetupMoveCoordDialog
+from dialogs import MoveDialog, ClickDialog, WaitDialog, MoveClickDialog, MouseDragDialog, LoopDialog, AdvancedOptionsDialog, SetupWaitRangeDialog, SetupMoveClickTimeRangeDialog, SetupCoordRangeDialog, SetupClickCoordRangeDialog, SetupMoveCoordDialog, SetupMoveTimeDialog
 from chat import ChatDialog
 import pyautogui
 import copy
@@ -625,6 +625,12 @@ class MainWindow(QMainWindow):
         if dialog.exec_() == QDialog.Accepted:
             x = dialog.result
             self.change_coord_in_moves_moveclicks(x)
+    
+    def open_setup_moveclick_time_range_dialog(self):
+        dialog = SetupMoveTimeDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            time = dialog.result
+            self.change_time_in_moves_movesclicks(time)
 
 
     def random_time_in_moves_movesclicks(self, min_time, max_time):
@@ -691,6 +697,17 @@ class MainWindow(QMainWindow):
             if isinstance(action, (MouseMove, MouseMoveClick)):
                 action.x = action.x + random.randint(-x, x)
                 action.y = action.y + random.randint(-x, x)
+        self.update_actions_history()
+        self.refresh_actions_listbox()
+
+    def change_time_in_moves_movesclicks(self, time):
+        if not self.actions:
+            QMessageBox.warning(self, "Warning", "No actions to change time for.")
+            return
+
+        for action in self.actions:
+            if isinstance(action, (MouseMove, MouseMoveClick)):
+                action.time = max(0.01, action.time + random.uniform(-time, time))
         self.update_actions_history()
         self.refresh_actions_listbox()
 

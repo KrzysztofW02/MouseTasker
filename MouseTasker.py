@@ -5,9 +5,11 @@ from PyQt5 import QtGui
 from actions import MouseMove, MouseClick, Wait, MouseMoveClick, MouseDrag
 from dialogs import MoveDialog, ClickDialog, WaitDialog, MoveClickDialog, MouseDragDialog, LoopDialog, AdvancedOptionsDialog, SetupWaitRangeDialog, SetupMoveClickTimeRangeDialog, SetupCoordRangeDialog, SetupClickCoordRangeDialog, SetupMoveCoordDialog, SetupMoveTimeDialog
 from chat import ChatDialog
+import keyboard
 import pyautogui
 import copy
 import random
+
 class ActionExecutor(QThread):
     update_action_index = pyqtSignal(int)
     action_completed = pyqtSignal()
@@ -36,6 +38,10 @@ class ActionExecutor(QThread):
         self.running = False
 
 class MainWindow(QMainWindow):
+    run_stop_signal = pyqtSignal()
+    run_stop_loop_signal = pyqtSignal()
+    check_coordinates_signal = pyqtSignal()
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("MouseTasker")
@@ -60,21 +66,20 @@ class MainWindow(QMainWindow):
 
         self.actions_running = False
 
-    def setup_shortcuts(self): 
-        shortcut_check_coordinates = QShortcut(QKeySequence('C'), self)
-        shortcut_check_coordinates.activated.connect(self.check_coordinates)
+        self.run_stop_signal.connect(self.toggle_run_stop_actions)
+        self.run_stop_loop_signal.connect(self.toogle_run_stop_loop_actions)
+        self.check_coordinates_signal.connect(self.check_coordinates)
+
+    def setup_shortcuts(self):
+        keyboard.add_hotkey('f1', self.run_stop_signal.emit)
+        keyboard.add_hotkey('f2', self.run_stop_loop_signal.emit)
+        keyboard.add_hotkey('c', self.check_coordinates_signal.emit)
 
         shortcut_delete_action = QShortcut(QKeySequence.Delete, self)
         shortcut_delete_action.activated.connect(self.delete_action)
 
         shortcut_save_actions = QShortcut(QKeySequence('Ctrl+S'), self)
         shortcut_save_actions.activated.connect(self.save_actions)
-
-        shortcut_run_stop_actions = QShortcut(QKeySequence('F1'), self)
-        shortcut_run_stop_actions.activated.connect(self.toggle_run_stop_actions)
-
-        shortcut_run_stop_loop_actions = QShortcut(QKeySequence('F2'), self)
-        shortcut_run_stop_loop_actions.activated.connect(self.toogle_run_stop_loop_actions)
 
         shortcut_advanced_options = QShortcut(QKeySequence('F3'), self)
         shortcut_advanced_options.activated.connect(self.open_advanced_options_dialog)

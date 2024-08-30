@@ -270,6 +270,10 @@ class AdvancedOptionsDialog(QDialog):
         self.random_time_in_moves_moveclicks_button2.clicked.connect(self.change_time_in_moves_movesclicks)
         layout.addWidget(self.random_time_in_moves_moveclicks_button2)
 
+        self.random_time_in_wait_button2 = QPushButton("Change time in Waits")
+        self.random_time_in_wait_button2.clicked.connect(self.change_random_time_in_wait)
+        layout.addWidget(self.random_time_in_wait_button2)
+
         self.setLayout(layout)
 
     def random_time_in_moves_movesclicks(self):
@@ -295,6 +299,10 @@ class AdvancedOptionsDialog(QDialog):
     def change_time_in_moves_movesclicks(self):
         if self.main_application:
             self.main_application.open_setup_moveclick_time_range_dialog()
+
+    def change_random_time_in_wait(self):
+        if self.main_application:
+            self.main_application.open_setup_time_range_dialog()
 
 class SetupWaitRangeDialog(QDialog):
     def __init__(self, parent=None):
@@ -540,6 +548,39 @@ class SetupMoveTimeDialog(QDialog):
             self.result = (time)
         except ValueError:
             QMessageBox.warning(self, "Warning", "Invalid input.")
+            return
+        super().accept()
+    
+class SetupTimeRangeDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Setup Time Range")
+        self.layout = QVBoxLayout()
+        
+        self.time_input = QLineEdit(self)
+        
+        double_validator = CustomDoubleValidator()
+        self.time_input.setValidator(double_validator)
+        
+        self.layout.addWidget(QLabel("Range:"))
+        self.layout.addWidget(self.time_input)
+        
+        self.ok_button = QPushButton("OK")
+        self.ok_button.clicked.connect(self.accept)
+        self.layout.addWidget(self.ok_button)
+        
+        self.setLayout(self.layout)
+        self.result = None
+    
+    def accept(self):
+        if not self.time_input.text():
+            QMessageBox.warning(self, "Warning", "All fields must be filled out.")
+            return
+        try:
+            time = float(self.time_input.text())
+            self.result = (time)
+        except ValueError as e:
+            QMessageBox.warning(self, "Warning", f"Invalid input: {e}")
             return
         super().accept()
 

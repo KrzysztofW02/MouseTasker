@@ -246,33 +246,37 @@ class AdvancedOptionsDialog(QDialog):
         self.setWindowTitle("Advanced Options")
         layout = QVBoxLayout()
 
-        self.random_time_in_moves_movesclicks_button = QPushButton("Random Time in Moves, MoveClicks")
+        self.random_time_in_moves_movesclicks_button = QPushButton("Randomize Move/MoveClick Times")
         self.random_time_in_moves_movesclicks_button.clicked.connect(self.random_time_in_moves_movesclicks)
         layout.addWidget(self.random_time_in_moves_movesclicks_button)
 
-        self.random_coord_in_moves_moveclicks_button = QPushButton("Random coordinates in Moves, MoveClicks")
+        self.random_coord_in_moves_moveclicks_button = QPushButton("Randomize Move/MoveClick Coordinates")
         self.random_coord_in_moves_moveclicks_button.clicked.connect(self.random_coord_in_moves_moveclicks)
         layout.addWidget(self.random_coord_in_moves_moveclicks_button)
 
-        self.random_coord_in_clicks_button = QPushButton("Random coordinates in Clicks")
+        self.random_coord_in_clicks_button = QPushButton("Randomize Click Coordinates")
         self.random_coord_in_clicks_button.clicked.connect(self.random_coord_in_clicks)
         layout.addWidget(self.random_coord_in_clicks_button)
 
-        self.random_time_in_wait_button = QPushButton("Random time in Waits")
+        self.random_time_in_wait_button = QPushButton("Randomize Wait Times")
         self.random_time_in_wait_button.clicked.connect(self.random_time_in_wait)
         layout.addWidget(self.random_time_in_wait_button)
 
-        self.random_coord_in_moves_moveclicks_button2 = QPushButton("Change coordinates in Moves, MoveClicks")
+        self.random_coord_in_moves_moveclicks_button2 = QPushButton("Offset Move/MoveClick Coordinates")
         self.random_coord_in_moves_moveclicks_button2.clicked.connect(self.change_coord_in_moves_moveclicks)
         layout.addWidget(self.random_coord_in_moves_moveclicks_button2)
 
-        self.random_time_in_moves_moveclicks_button2 = QPushButton("Change time in Moves, MoveClicks")
+        self.random_time_in_moves_moveclicks_button2 = QPushButton("Offset Move/MoveClick Times")
         self.random_time_in_moves_moveclicks_button2.clicked.connect(self.change_time_in_moves_movesclicks)
         layout.addWidget(self.random_time_in_moves_moveclicks_button2)
 
-        self.random_time_in_wait_button2 = QPushButton("Change time in Waits")
+        self.random_time_in_wait_button2 = QPushButton("Offset Wait Times")
         self.random_time_in_wait_button2.clicked.connect(self.change_random_time_in_wait)
         layout.addWidget(self.random_time_in_wait_button2)
+
+        self.random_coord_in_clicks2 = QPushButton("Offset Click Coordinates")
+        self.random_coord_in_clicks2.clicked.connect(self.change_coord_in_clicks)
+        layout.addWidget(self.random_coord_in_clicks2)
 
         self.setLayout(layout)
 
@@ -303,6 +307,10 @@ class AdvancedOptionsDialog(QDialog):
     def change_random_time_in_wait(self):
         if self.main_application:
             self.main_application.open_setup_time_range_dialog()
+
+    def change_coord_in_clicks(self):
+        if self.main_application:
+            self.main_application.open_setup_click_coord_range_dialog()
 
 class SetupWaitRangeDialog(QDialog):
     def __init__(self, parent=None):
@@ -434,7 +442,7 @@ class SetupCoordRangeDialog(QDialog):
             return
         super().accept()
 
-class SetupClickCoordRangeDialog(QDialog):
+class SetupClickCoordDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Setup Click Coordinate Range")
@@ -581,6 +589,39 @@ class SetupTimeRangeDialog(QDialog):
             self.result = (time)
         except ValueError as e:
             QMessageBox.warning(self, "Warning", f"Invalid input: {e}")
+            return
+        super().accept()
+
+class SetupClickCoordRangeDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Setup Click Coordinates")
+        self.layout = QVBoxLayout()
+        
+        self.x_input = QLineEdit(self)
+        
+        int_validator = QIntValidator(self)
+        self.x_input.setValidator(int_validator)
+        
+        self.layout.addWidget(QLabel("Range:"))
+        self.layout.addWidget(self.x_input)
+        
+        self.ok_button = QPushButton("OK")
+        self.ok_button.clicked.connect(self.accept)
+        self.layout.addWidget(self.ok_button)
+        
+        self.setLayout(self.layout)
+        self.result = None
+    
+    def accept(self):
+        if not self.x_input.text():
+            QMessageBox.warning(self, "Warning", "All fields must be filled out.")
+            return
+        try:
+            x = int(self.x_input.text())
+            self.result = (x)
+        except ValueError:
+            QMessageBox.warning(self, "Warning", "Invalid input.")
             return
         super().accept()
 

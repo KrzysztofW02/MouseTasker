@@ -3,7 +3,7 @@ from PyQt5.QtGui import QKeySequence
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5 import QtGui
 from actions import MouseMove, MouseClick, Wait, MouseMoveClick, MouseDrag
-from dialogs import MoveDialog, ClickDialog, WaitDialog, MoveClickDialog, MouseDragDialog, LoopDialog, AdvancedOptionsDialog, SetupWaitRangeDialog, SetupMoveClickTimeRangeDialog, SetupCoordRangeDialog, SetupClickCoordRangeDialog, SetupMoveCoordDialog, SetupMoveTimeDialog, SetupTimeRangeDialog
+from dialogs import MoveDialog, ClickDialog, WaitDialog, MoveClickDialog, MouseDragDialog, LoopDialog, AdvancedOptionsDialog, SetupWaitRangeDialog, SetupMoveClickTimeRangeDialog, SetupCoordRangeDialog, SetupClickCoordDialog, SetupMoveCoordDialog, SetupMoveTimeDialog, SetupTimeRangeDialog, SetupClickCoordRangeDialog
 from chat import ChatDialog
 import keyboard
 import pyautogui
@@ -73,7 +73,7 @@ class MainWindow(QMainWindow):
     def setup_shortcuts(self):
         keyboard.add_hotkey('f1', self.run_stop_signal.emit)
         keyboard.add_hotkey('f2', self.run_stop_loop_signal.emit)
-        keyboard.add_hotkey('c', self.check_coordinates_signal.emit)
+        keyboard.add_hotkey('f3', self.check_coordinates_signal.emit)
 
         shortcut_delete_action = QShortcut(QKeySequence.Delete, self)
         shortcut_delete_action.activated.connect(self.delete_action)
@@ -81,7 +81,7 @@ class MainWindow(QMainWindow):
         shortcut_save_actions = QShortcut(QKeySequence('Ctrl+S'), self)
         shortcut_save_actions.activated.connect(self.save_actions)
 
-        shortcut_advanced_options = QShortcut(QKeySequence('F3'), self)
+        shortcut_advanced_options = QShortcut(QKeySequence('F4'), self)
         shortcut_advanced_options.activated.connect(self.open_advanced_options_dialog)
 
         shortcut_show_shortcuts = QShortcut(QKeySequence('F5'), self)
@@ -535,8 +535,8 @@ class MainWindow(QMainWindow):
                   "Paste: Ctrl+V\n\n" \
                   "RUN / STOP: F1      " \
                   "RUN LOOP / STOP: F2\n\n" \
-                  "Advanced Options: F3      " \
-                  "Check Coordinates: C\n\n" \
+                  "Check Coordinates: F3      " \
+                  "Advanced Options: F4\n\n" \
                   "Load: Ctrl+L      " \
                   "Delete: Delete\n\n" \
                   "Show Shortcuts: F5"
@@ -620,7 +620,7 @@ class MainWindow(QMainWindow):
             self.random_coord_in_moves_moveclicks(x_min, x_max, y_min, y_max)
 
     def open_setup_click_coord_dialog(self):
-        dialog = SetupClickCoordRangeDialog(self)
+        dialog = SetupClickCoordDialog(self)
         if dialog.exec_() == QDialog.Accepted:
             x_min, x_max, y_min, y_max = dialog.result
             self.random_coord_in_clicks(x_min, x_max, y_min, y_max)
@@ -642,6 +642,12 @@ class MainWindow(QMainWindow):
         if dialog.exec_() == QDialog.Accepted:
             time = dialog.result
             self.change_random_time_in_wait(time)
+
+    def open_setup_click_coord_range_dialog(self):
+        dialog = SetupClickCoordRangeDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            x = dialog.result
+            self.change_random_coord_in_clicks(x)
             
 
 
@@ -731,6 +737,18 @@ class MainWindow(QMainWindow):
         for action in self.actions:
             if isinstance(action, Wait):
                 action.time = max(0.01, action.time + random.uniform(-time, time))
+        self.update_actions_history()
+        self.refresh_actions_listbox()
+    
+    def change_random_coord_in_clicks(self, x):
+        if not self.actions:
+            QMessageBox.warning(self, "Warning", "No actions to change coordinates for.")
+            return
+
+        for action in self.actions:
+            if isinstance(action, MouseClick):
+                action.x = action.x + random.randint(-x, x)
+                action.y = action.y + random.randint(-x, x)
         self.update_actions_history()
         self.refresh_actions_listbox()
 

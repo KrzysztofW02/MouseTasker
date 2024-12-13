@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QLis
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5 import QtGui
-from actions import MouseMove, MouseClick, Wait, MouseMoveClick, MouseDrag
+from actions import MouseMove, MouseClick, Wait, MouseMoveClick, MouseDrag, MouseRecord
 from dialogs import MoveDialog, ClickDialog, WaitDialog, MoveClickDialog, MouseDragDialog, LoopDialog, AdvancedOptionsDialog, SetupWaitRangeDialog, SetupMoveClickTimeRangeDialog, SetupCoordRangeDialog, SetupClickCoordDialog, SetupMoveCoordDialog, SetupMoveTimeDialog, SetupTimeRangeDialog, SetupClickCoordRangeDialog
 from chat import ChatDialog
 import keyboard
@@ -41,6 +41,7 @@ class MainWindow(QMainWindow):
     run_stop_signal = pyqtSignal()
     run_stop_loop_signal = pyqtSignal()
     check_coordinates_signal = pyqtSignal()
+    start_recording_signal = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -69,11 +70,13 @@ class MainWindow(QMainWindow):
         self.run_stop_signal.connect(self.toggle_run_stop_actions)
         self.run_stop_loop_signal.connect(self.toogle_run_stop_loop_actions)
         self.check_coordinates_signal.connect(self.check_coordinates)
+        self.start_recording_signal.connect(self.toggle_recording)
 
     def setup_shortcuts(self):
         keyboard.add_hotkey('f1', self.run_stop_signal.emit)
         keyboard.add_hotkey('f2', self.run_stop_loop_signal.emit)
         keyboard.add_hotkey('f3', self.check_coordinates_signal.emit)
+        keyboard.add_hotkey('f10', self.start_recording_signal.emit)
 
         shortcut_delete_action = QShortcut(QKeySequence.Delete, self)
         shortcut_delete_action.activated.connect(self.delete_action)
@@ -118,6 +121,10 @@ class MainWindow(QMainWindow):
         self.top_buttons_layout = QHBoxLayout()
         self.layout.addLayout(self.top_buttons_layout)
 
+        self.recording_button = QPushButton("Start Recording")
+        self.recording_button.clicked.connect(self.toggle_recording)
+        self.top_buttons_layout.addWidget(self.recording_button)
+
         self.add_move_click_button = QPushButton("Add MoveClick")
         self.add_move_click_button.clicked.connect(self.add_move_click)
         self.top_buttons_layout.addWidget(self.add_move_click_button)
@@ -133,10 +140,6 @@ class MainWindow(QMainWindow):
         self.add_wait_button = QPushButton("Add Wait")
         self.add_wait_button.clicked.connect(self.add_wait)
         self.top_buttons_layout.addWidget(self.add_wait_button)
-
-        self.add_mouse_drag_button = QPushButton("Add Mouse Drag")
-        self.add_mouse_drag_button.clicked.connect(self.add_mouse_drag)
-        self.top_buttons_layout.addWidget(self.add_mouse_drag_button)
 
         self.chat_button = QPushButton("Open Chat")
         self.chat_button.clicked.connect(self.open_chat_dialog)
@@ -310,6 +313,48 @@ class MainWindow(QMainWindow):
             self.actions.insert(insert_position, action)
             self.actions_list_widget.insertItem(insert_position, str(action))
             self.update_actions_history()
+
+    def start_recording(self):
+        if not hasattr(self, 'mouse_recorder'):
+            self.mouse_recorder = MouseRecord()
+        self.mouse_recorder.start()
+        self.start_recording_button.setEnabled(False)
+        self.stop_recording_button.setEnabled(True)
+
+    def stop_recording(self):
+        if hasattr(self, 'mouse_recorder'):
+            self.mouse_recorder.stop()
+            recorded_actions = self.mouse_recorder.get_actions()
+            self.add_recorded_actions_to_main_list(recorded_actions)
+        self.start_recording_button.setEnabled(True)
+        self.stop_recording_button.setEnabled(False)
+
+    def add_recorded_actions_to_main_list(self, recorded_actions):
+        selected_index = self.actions_list_widget.currentRow()
+        if selected_index != -1:
+            insert_position = selected_index + 1
+        else:
+            insert_position = len(self.actions)
+        
+        for action in recorded_actions:
+            self.actions.insert(insert_position, action)
+            self.actions_list_widget.insertItem(insert_position, str(action))
+            insert_position += 1
+
+        self.update_actions_history()
+
+    def toggle_recording(self):
+        if not hasattr(self, 'mouse_recorder'):
+            self.mouse_recorder = MouseRecord()
+
+        if self.recording_button.text() == "Start Recording":
+            self.mouse_recorder.start()
+            self.recording_button.setText("Stop Recording")
+        else:
+            self.mouse_recorder.stop()
+            recorded_actions = self.mouse_recorder.get_actions()
+            self.add_recorded_actions_to_main_list(recorded_actions)
+            self.recording_button.setText("Start Recording")
 
     def open_chat_dialog(self):
         if self.chat_dialog is None:
@@ -539,7 +584,8 @@ class MainWindow(QMainWindow):
                   "Advanced Options: F4\n\n" \
                   "Load: Ctrl+L      " \
                   "Delete: Delete\n\n" \
-                  "Show Shortcuts: F5"
+                  "Show Shortcuts: F5      " \
+                  "Start Recording: F10"
         QMessageBox.information(self, "Shortcuts", message)
 
     def copy_action(self):

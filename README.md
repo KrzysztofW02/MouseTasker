@@ -32,6 +32,17 @@ To start MouseTasker, navigate to the project directory and run:
 
 python main.py
 
+## Mouse Recording
+
+The Mouse Recording feature allows you to record complex mouse movements and play them back with precise timing. 
+
+![Demo](https://s6.ezgif.com/tmp/ezgif-6-947300915b.gif)
+1. Click the Record Mouse Actions button or "F10" to start recording.
+2. Perform the desired mouse actions (moving, clicking).
+3. Click the button again or "F10" to stop the recording.
+4. The recorded actions will appear in the actions list, including paths.
+5. Use the Save and Load options to export or import recorded sequences.
+
 ## AI CHAT 
 
 If you're unsure how to use the app, you can click on button "Open Chat" and ask a question in the chat, which will guide you on how to do something.

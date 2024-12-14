@@ -3,7 +3,7 @@ from PyQt5.QtGui import QKeySequence
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5 import QtGui
 from actions import MouseMove, MouseClick, Wait, MouseMoveClick, MouseDrag, MouseRecord, MousePath
-from dialogs import MoveDialog, ClickDialog, WaitDialog, MoveClickDialog, MouseDragDialog, LoopDialog, AdvancedOptionsDialog, SetupWaitRangeDialog, SetupMoveClickTimeRangeDialog, SetupCoordRangeDialog, SetupClickCoordDialog, SetupMoveCoordDialog, SetupMoveTimeDialog, SetupTimeRangeDialog, SetupClickCoordRangeDialog
+from dialogs import MoveDialog, ClickDialog, WaitDialog, MoveClickDialog, MouseDragDialog, LoopDialog, AdvancedOptionsDialog, SetupWaitRangeDialog, SetupMoveClickTimeRangeDialog, SetupCoordRangeDialog, SetupClickCoordDialog, SetupMoveCoordDialog, SetupMoveTimeDialog, SetupTimeRangeDialog, SetupClickCoordRangeDialog, SpeedDialog
 from chat import ChatDialog
 import keyboard
 import pyautogui
@@ -613,24 +613,8 @@ class MainWindow(QMainWindow):
             self.actions_history = []  
             self.refresh_actions_listbox()
 
-
     def update_actions_history(self):
         self.actions_history.append(copy.deepcopy(self.actions))
-
-    def refresh_actions_listbox(self):
-        self.actions_list_widget.clear()
-        for action in self.actions:
-            if isinstance(action, MouseMove):
-                self.actions_list_widget.addItem(f"Move: {action.x}, {action.y}, {action.time}")
-            elif isinstance(action, MouseClick):
-                self.actions_list_widget.addItem(f"Click: {action.x}, {action.y}")
-            elif isinstance(action, Wait):
-                self.actions_list_widget.addItem(f"Wait: {action.time}s")
-            elif isinstance(action, MouseMoveClick):
-                self.actions_list_widget.addItem(f"MoveClick: {action.x}, {action.y}, {action.time}")
-            elif isinstance(action, MouseDrag):
-                self.actions_list_widget.addItem(f"MouseDrag: {action.x}, {action.y}, {action.time}")
-
 
     def open_advanced_options_dialog(self):
         dialog = AdvancedOptionsDialog(self, self)
@@ -787,6 +771,32 @@ class MainWindow(QMainWindow):
         self.update_actions_history()
         self.refresh_actions_listbox()
 
+        #SPEED MULTIPLIER
+    def open_setup_speed_dialog(self):
+        dialog = SpeedDialog(self)
+        if dialog.exec() == QDialog.Accepted and dialog.selected_speed:
+            self.apply_speed_multiplier(dialog.selected_speed)
+
+            QMessageBox.information(self, "Speed Set", f"Speed multiplier set to x{dialog.selected_speed}")
+
+    def apply_speed_multiplier(self, multiplier): 
+        if not isinstance(multiplier, (int, float)) or multiplier <= 0:
+            multiplier = 1.0
+
+        for action in self.actions:
+            if isinstance(action, MouseMove) or isinstance(action, MouseMoveClick) or isinstance(action, MouseDrag):
+                action.time = round(action.time / multiplier, 6)
+            elif isinstance(action, Wait):
+                action.time = round(action.time / multiplier, 6)
+            elif isinstance(action, MousePath):
+                for i in range(len(action.points)):
+                    x, y, time_delta = action.points[i]
+                    new_time_delta = round(time_delta / multiplier, 6)
+                    action.points[i] = (x, y, new_time_delta)
+
+        self.update_actions_history()
+        self.refresh_actions_listbox()
+
     def refresh_actions_listbox(self):
         self.actions_list_widget.clear()
         for action in self.actions:
@@ -800,7 +810,8 @@ class MainWindow(QMainWindow):
                 self.actions_list_widget.addItem(f"MoveClick: {action.x}, {action.y}, {action.time:.2f}s")
             elif isinstance(action, MouseDrag):
                 self.actions_list_widget.addItem(f"MouseDrag: {action.x}, {action.y}, {action.time:.2f}s")
-
+            elif isinstance(action, MousePath):
+                self.actions_list_widget.addItem(f"Path with {len(action.points)} points")
 
     def check_coordinates(self):
         x, y = pyautogui.position()
@@ -810,8 +821,6 @@ class MainWindow(QMainWindow):
         coord_label.setAlignment(Qt.AlignCenter)  
         coord_window.layout().addWidget(coord_label, 0, Qt.AlignLeft) 
         coord_window.setStyleSheet("QLabel{min-width: 500px; font-size: 20pt;}")
-
-
 
         add_move_button = coord_window.addButton("Add Move", QMessageBox.ActionRole)
         add_click_button = coord_window.addButton("Add Click", QMessageBox.ActionRole)

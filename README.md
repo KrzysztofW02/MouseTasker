@@ -36,7 +36,7 @@ python main.py
 
 The Mouse Recording feature allows you to record complex mouse movements and play them back with precise timing. 
 
-![Demo](https://s6.ezgif.com/tmp/ezgif-6-947300915b.gif)
+![Demo](https://drive.google.com/uc?id=1WnVgtA_ESKeWwhi6W0Sn6dmoXbMe-ViB)
 1. Click the Record Mouse Actions button or "F10" to start recording.
 2. Perform the desired mouse actions (moving, clicking).
 3. Click the button again or "F10" to stop the recording.

@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QLis
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5 import QtGui
-from actions import MouseMove, MouseClick, Wait, MouseMoveClick, MouseDrag
+from actions import MouseMove, MouseClick, Wait, MouseMoveClick, MouseDrag, MouseRecord, MousePath
 from dialogs import MoveDialog, ClickDialog, WaitDialog, MoveClickDialog, MouseDragDialog, LoopDialog, AdvancedOptionsDialog, SetupWaitRangeDialog, SetupMoveClickTimeRangeDialog, SetupCoordRangeDialog, SetupClickCoordDialog, SetupMoveCoordDialog, SetupMoveTimeDialog, SetupTimeRangeDialog, SetupClickCoordRangeDialog
 from chat import ChatDialog
 import keyboard
@@ -41,6 +41,7 @@ class MainWindow(QMainWindow):
     run_stop_signal = pyqtSignal()
     run_stop_loop_signal = pyqtSignal()
     check_coordinates_signal = pyqtSignal()
+    start_recording_signal = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -69,11 +70,13 @@ class MainWindow(QMainWindow):
         self.run_stop_signal.connect(self.toggle_run_stop_actions)
         self.run_stop_loop_signal.connect(self.toogle_run_stop_loop_actions)
         self.check_coordinates_signal.connect(self.check_coordinates)
+        self.start_recording_signal.connect(self.toggle_recording)
 
     def setup_shortcuts(self):
         keyboard.add_hotkey('f1', self.run_stop_signal.emit)
         keyboard.add_hotkey('f2', self.run_stop_loop_signal.emit)
         keyboard.add_hotkey('f3', self.check_coordinates_signal.emit)
+        keyboard.add_hotkey('f10', self.start_recording_signal.emit)
 
         shortcut_delete_action = QShortcut(QKeySequence.Delete, self)
         shortcut_delete_action.activated.connect(self.delete_action)
@@ -118,6 +121,10 @@ class MainWindow(QMainWindow):
         self.top_buttons_layout = QHBoxLayout()
         self.layout.addLayout(self.top_buttons_layout)
 
+        self.recording_button = QPushButton("Start Recording")
+        self.recording_button.clicked.connect(self.toggle_recording)
+        self.top_buttons_layout.addWidget(self.recording_button)
+
         self.add_move_click_button = QPushButton("Add MoveClick")
         self.add_move_click_button.clicked.connect(self.add_move_click)
         self.top_buttons_layout.addWidget(self.add_move_click_button)
@@ -133,10 +140,6 @@ class MainWindow(QMainWindow):
         self.add_wait_button = QPushButton("Add Wait")
         self.add_wait_button.clicked.connect(self.add_wait)
         self.top_buttons_layout.addWidget(self.add_wait_button)
-
-        self.add_mouse_drag_button = QPushButton("Add Mouse Drag")
-        self.add_mouse_drag_button.clicked.connect(self.add_mouse_drag)
-        self.top_buttons_layout.addWidget(self.add_mouse_drag_button)
 
         self.chat_button = QPushButton("Open Chat")
         self.chat_button.clicked.connect(self.open_chat_dialog)
@@ -311,6 +314,48 @@ class MainWindow(QMainWindow):
             self.actions_list_widget.insertItem(insert_position, str(action))
             self.update_actions_history()
 
+    def start_recording(self):
+        if not hasattr(self, 'mouse_recorder'):
+            self.mouse_recorder = MouseRecord()
+        self.mouse_recorder.start()
+        self.start_recording_button.setEnabled(False)
+        self.stop_recording_button.setEnabled(True)
+
+    def stop_recording(self):
+        if hasattr(self, 'mouse_recorder'):
+            self.mouse_recorder.stop()
+            recorded_actions = self.mouse_recorder.get_actions()
+            self.add_recorded_actions_to_main_list(recorded_actions)
+        self.start_recording_button.setEnabled(True)
+        self.stop_recording_button.setEnabled(False)
+
+    def add_recorded_actions_to_main_list(self, recorded_actions):
+        selected_index = self.actions_list_widget.currentRow()
+        if selected_index != -1:
+            insert_position = selected_index + 1
+        else:
+            insert_position = len(self.actions)
+        
+        for action in recorded_actions:
+            self.actions.insert(insert_position, action)
+            self.actions_list_widget.insertItem(insert_position, str(action))
+            insert_position += 1
+
+        self.update_actions_history()
+
+    def toggle_recording(self):
+        if not hasattr(self, 'mouse_recorder'):
+            self.mouse_recorder = MouseRecord()
+
+        if self.recording_button.text() == "Start Recording":
+            self.mouse_recorder.start()
+            self.recording_button.setText("Stop Recording")
+        else:
+            self.mouse_recorder.stop()
+            recorded_actions = self.mouse_recorder.get_actions()
+            self.add_recorded_actions_to_main_list(recorded_actions)
+            self.recording_button.setText("Start Recording")
+
     def open_chat_dialog(self):
         if self.chat_dialog is None:
             self.chat_dialog = ChatDialog(self)
@@ -434,6 +479,7 @@ class MainWindow(QMainWindow):
     def on_actions_completed(self):
         self.actions_running = False
 
+        # SAVE AND LOAD ACTIONS
     def save_actions(self):
         filepath, _ = QFileDialog.getSaveFileName(self, "Save Actions", "", "Text Files (*.txt);;All Files (*)")
         if not filepath:
@@ -452,10 +498,15 @@ class MainWindow(QMainWindow):
                     file.write(f"MoveClick,{action.x},{action.y},{action.time}\n")
                 elif isinstance(action, MouseDrag):
                     file.write(f"MouseDrag,{action.x},{action.y},{action.time}\n")
+                elif isinstance(action, MousePath):
+                    file.write("PathStart\n")  
+                    for x, y, time_delta in action.points:
+                        file.write(f"PathPoint,{x},{y},{time_delta}\n")
+                    file.write("PathEnd\n")  
 
     def load_actions(self):
         if QMessageBox.warning(self, "Warning", "Loading a new file will remove your current actions list. Would you like to continue?",
-                               QMessageBox.Yes | QMessageBox.No) == QMessageBox.No:
+                            QMessageBox.Yes | QMessageBox.No) == QMessageBox.No:
             return
 
         filepath, _ = QFileDialog.getOpenFileName(self, "Load Actions", "", "Text Files (*.txt);;All Files (*)")
@@ -463,63 +514,46 @@ class MainWindow(QMainWindow):
             return
 
         temp_actions = []
+        current_path = None  
+
         try:
             with open(filepath, 'r') as file:
                 for line in file:
                     parts = line.strip().split(',')
                     if parts[0] == "Move" and len(parts) == 4:
-                        try:
-                            action = MouseMove(int(parts[1]), int(parts[2]), float(parts[3]))
-                        except ValueError:
-                            QMessageBox.critical(self, "Error", "File is incorrect!")
-                            return
+                        action = MouseMove(int(parts[1]), int(parts[2]), float(parts[3]))
+                        temp_actions.append(action)
                     elif parts[0] == "Click" and len(parts) == 3:
-                        try:
-                            action = MouseClick(int(parts[1]), int(parts[2]))
-                        except ValueError:
-                            QMessageBox.critical(self, "Error", "File is incorrect!")
-                            return
+                        action = MouseClick(int(parts[1]), int(parts[2]))
+                        temp_actions.append(action)
                     elif parts[0] == "Wait" and len(parts) == 2:
-                        try:
-                            action = Wait(float(parts[1]))
-                        except ValueError:
-                            QMessageBox.critical(self, "Error", "File is incorrect!")
-                            return
+                        action = Wait(float(parts[1]))
+                        temp_actions.append(action)
                     elif parts[0] == "MoveClick" and len(parts) == 4:
-                        try:
-                            action = MouseMoveClick(int(parts[1]), int(parts[2]), float(parts[3]))
-                        except ValueError:
-                            QMessageBox.critical(self, "Error", "File is incorrect!")
-                            return
+                        action = MouseMoveClick(int(parts[1]), int(parts[2]), float(parts[3]))
+                        temp_actions.append(action)
                     elif parts[0] == "MouseDrag" and len(parts) == 4:
-                        try:
-                            action = MouseDrag(int(parts[1]), int(parts[2]), float(parts[3]))
-                        except ValueError:
-                            QMessageBox.critical(self, "Error", "File is incorrect!")
-                            return
+                        action = MouseDrag(int(parts[1]), int(parts[2]), float(parts[3]))
+                        temp_actions.append(action)
+                    elif parts[0] == "PathStart":
+                        current_path = MousePath()  
+                    elif parts[0] == "PathPoint" and len(parts) == 4 and current_path is not None:
+                        current_path.add_point(int(parts[1]), int(parts[2]), float(parts[3]))
+                    elif parts[0] == "PathEnd" and current_path is not None:
+                        temp_actions.append(current_path)  
+                        current_path = None
                     else:
                         QMessageBox.critical(self, "Error", "File is incorrect!")
                         return
-                    temp_actions.append(action)
-        except FileNotFoundError:
-            QMessageBox.critical(self, "Error", "File does not exist.")
+        except (FileNotFoundError, ValueError):
+            QMessageBox.critical(self, "Error", "Failed to load the file. Please ensure the format is correct.")
             return
 
         self.actions.clear()
         self.actions_list_widget.clear()
         for action in temp_actions:
             self.actions.append(action)
-            if isinstance(action, MouseMove):
-                self.actions_list_widget.addItem(f"Move: {action.x}, {action.y}, {action.time}")
-            elif isinstance(action, MouseClick):
-                self.actions_list_widget.addItem(f"Click: {action.x}, {action.y}")
-            elif isinstance(action, Wait):
-                self.actions_list_widget.addItem(f"Wait: {action.time}s")
-            elif isinstance(action, MouseMoveClick):
-                self.actions_list_widget.addItem(f"MoveClick: {action.x}, {action.y}, {action.time}")
-            elif isinstance(action, MouseDrag):
-                self.actions_list_widget.addItem(f"MouseDrag: {action.x}, {action.y}, {action.time}")
-        
+            self.actions_list_widget.addItem(str(action))           
     
     def select_all_actions(self):
         self.actions_list_widget.clearSelection() 
@@ -539,7 +573,8 @@ class MainWindow(QMainWindow):
                   "Advanced Options: F4\n\n" \
                   "Load: Ctrl+L      " \
                   "Delete: Delete\n\n" \
-                  "Show Shortcuts: F5"
+                  "Show Shortcuts: F5      " \
+                  "Start Recording: F10"
         QMessageBox.information(self, "Shortcuts", message)
 
     def copy_action(self):

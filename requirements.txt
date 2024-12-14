@@ -3,3 +3,4 @@ qtvscodestyle
 pip-tools
 pyautogui
 keyboard
+pynput

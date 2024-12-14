@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QLis
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5 import QtGui
-from actions import MouseMove, MouseClick, Wait, MouseMoveClick, MouseDrag, MouseRecord
+from actions import MouseMove, MouseClick, Wait, MouseMoveClick, MouseDrag, MouseRecord, MousePath
 from dialogs import MoveDialog, ClickDialog, WaitDialog, MoveClickDialog, MouseDragDialog, LoopDialog, AdvancedOptionsDialog, SetupWaitRangeDialog, SetupMoveClickTimeRangeDialog, SetupCoordRangeDialog, SetupClickCoordDialog, SetupMoveCoordDialog, SetupMoveTimeDialog, SetupTimeRangeDialog, SetupClickCoordRangeDialog
 from chat import ChatDialog
 import keyboard
@@ -479,6 +479,7 @@ class MainWindow(QMainWindow):
     def on_actions_completed(self):
         self.actions_running = False
 
+        # SAVE AND LOAD ACTIONS
     def save_actions(self):
         filepath, _ = QFileDialog.getSaveFileName(self, "Save Actions", "", "Text Files (*.txt);;All Files (*)")
         if not filepath:
@@ -497,10 +498,15 @@ class MainWindow(QMainWindow):
                     file.write(f"MoveClick,{action.x},{action.y},{action.time}\n")
                 elif isinstance(action, MouseDrag):
                     file.write(f"MouseDrag,{action.x},{action.y},{action.time}\n")
+                elif isinstance(action, MousePath):
+                    file.write("PathStart\n")  
+                    for x, y, time_delta in action.points:
+                        file.write(f"PathPoint,{x},{y},{time_delta}\n")
+                    file.write("PathEnd\n")  
 
     def load_actions(self):
         if QMessageBox.warning(self, "Warning", "Loading a new file will remove your current actions list. Would you like to continue?",
-                               QMessageBox.Yes | QMessageBox.No) == QMessageBox.No:
+                            QMessageBox.Yes | QMessageBox.No) == QMessageBox.No:
             return
 
         filepath, _ = QFileDialog.getOpenFileName(self, "Load Actions", "", "Text Files (*.txt);;All Files (*)")
@@ -508,63 +514,46 @@ class MainWindow(QMainWindow):
             return
 
         temp_actions = []
+        current_path = None  
+
         try:
             with open(filepath, 'r') as file:
                 for line in file:
                     parts = line.strip().split(',')
                     if parts[0] == "Move" and len(parts) == 4:
-                        try:
-                            action = MouseMove(int(parts[1]), int(parts[2]), float(parts[3]))
-                        except ValueError:
-                            QMessageBox.critical(self, "Error", "File is incorrect!")
-                            return
+                        action = MouseMove(int(parts[1]), int(parts[2]), float(parts[3]))
+                        temp_actions.append(action)
                     elif parts[0] == "Click" and len(parts) == 3:
-                        try:
-                            action = MouseClick(int(parts[1]), int(parts[2]))
-                        except ValueError:
-                            QMessageBox.critical(self, "Error", "File is incorrect!")
-                            return
+                        action = MouseClick(int(parts[1]), int(parts[2]))
+                        temp_actions.append(action)
                     elif parts[0] == "Wait" and len(parts) == 2:
-                        try:
-                            action = Wait(float(parts[1]))
-                        except ValueError:
-                            QMessageBox.critical(self, "Error", "File is incorrect!")
-                            return
+                        action = Wait(float(parts[1]))
+                        temp_actions.append(action)
                     elif parts[0] == "MoveClick" and len(parts) == 4:
-                        try:
-                            action = MouseMoveClick(int(parts[1]), int(parts[2]), float(parts[3]))
-                        except ValueError:
-                            QMessageBox.critical(self, "Error", "File is incorrect!")
-                            return
+                        action = MouseMoveClick(int(parts[1]), int(parts[2]), float(parts[3]))
+                        temp_actions.append(action)
                     elif parts[0] == "MouseDrag" and len(parts) == 4:
-                        try:
-                            action = MouseDrag(int(parts[1]), int(parts[2]), float(parts[3]))
-                        except ValueError:
-                            QMessageBox.critical(self, "Error", "File is incorrect!")
-                            return
+                        action = MouseDrag(int(parts[1]), int(parts[2]), float(parts[3]))
+                        temp_actions.append(action)
+                    elif parts[0] == "PathStart":
+                        current_path = MousePath()  
+                    elif parts[0] == "PathPoint" and len(parts) == 4 and current_path is not None:
+                        current_path.add_point(int(parts[1]), int(parts[2]), float(parts[3]))
+                    elif parts[0] == "PathEnd" and current_path is not None:
+                        temp_actions.append(current_path)  
+                        current_path = None
                     else:
                         QMessageBox.critical(self, "Error", "File is incorrect!")
                         return
-                    temp_actions.append(action)
-        except FileNotFoundError:
-            QMessageBox.critical(self, "Error", "File does not exist.")
+        except (FileNotFoundError, ValueError):
+            QMessageBox.critical(self, "Error", "Failed to load the file. Please ensure the format is correct.")
             return
 
         self.actions.clear()
         self.actions_list_widget.clear()
         for action in temp_actions:
             self.actions.append(action)
-            if isinstance(action, MouseMove):
-                self.actions_list_widget.addItem(f"Move: {action.x}, {action.y}, {action.time}")
-            elif isinstance(action, MouseClick):
-                self.actions_list_widget.addItem(f"Click: {action.x}, {action.y}")
-            elif isinstance(action, Wait):
-                self.actions_list_widget.addItem(f"Wait: {action.time}s")
-            elif isinstance(action, MouseMoveClick):
-                self.actions_list_widget.addItem(f"MoveClick: {action.x}, {action.y}, {action.time}")
-            elif isinstance(action, MouseDrag):
-                self.actions_list_widget.addItem(f"MouseDrag: {action.x}, {action.y}, {action.time}")
-        
+            self.actions_list_widget.addItem(str(action))           
     
     def select_all_actions(self):
         self.actions_list_widget.clearSelection() 

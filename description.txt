@@ -20,7 +20,10 @@ Bottom Panel Buttons:
     Help: Access information about available shortcuts.
     
     Advanced Options:
-    This tool allows you to introduce randomness into your automation scripts by setting random coordinates or wait times for various actions. Each function offers unique customization options, ensuring that your automated tasks appear more dynamic and human-like.
+    This tool allows you to introduce randomness into your automation scripts by setting random coordinates or wait times for various actions. Each function offers unique customization options, ensuring that your automated tasks appear more dynamic and human-like. You can also setup speed.
+
+    Speed: This option allows you to change speed of the action. You can setup 2x, 4x etc. or your custom speed e.g. "0.55x". 
+
     Randomize Move/MoveClick Coordinates:
     This function allows you to randomize the coordinates for all "Move" and "MoveClick" actions. You can set a range for both X and Y coordinates, such as X_min = 100, X_max = 200, Y_min = 200, and Y_max = 300. For each action, a random coordinate within these ranges will be generated. For example, a "MoveClick" that was originally at (150, 250) could be randomized to (180, 270).
 

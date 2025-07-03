@@ -1,41 +1,39 @@
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QPushButton, QListWidget, QAction, QMenu, QMenuBar, QHBoxLayout, QFileDialog, QMessageBox, QDialog, QShortcut, QLabel, QAbstractItemView
 from PyQt5.QtGui import QKeySequence
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5 import QtGui
-from actions import MouseMove, MouseClick, Wait, MouseMoveClick, MouseDrag, MouseRecord, MousePath
-from dialogs import MoveDialog, ClickDialog, WaitDialog, MoveClickDialog, MouseDragDialog, LoopDialog, AdvancedOptionsDialog, SetupWaitRangeDialog, SetupMoveClickTimeRangeDialog, SetupCoordRangeDialog, SetupClickCoordDialog, SetupMoveCoordDialog, SetupMoveTimeDialog, SetupTimeRangeDialog, SetupClickCoordRangeDialog, SpeedDialog
+
+from actions.mouse_move import MouseMove
+from actions.mouse_click import MouseClick
+from actions.mouse_wait import MouseWait
+from actions.mouse_move_click import MouseMoveClick
+from actions.mouse_drag import MouseDrag
+from actions.mouse_path import MousePath
+from actions.mouse_record import MouseRecord
+
+from dialogs.move_dialog import MoveDialog
+from dialogs.click_dialog import ClickDialog
+from dialogs.wait_dialog import WaitDialog
+from dialogs.move_click_dialog import MoveClickDialog
+from dialogs.mouse_drag_dialog import MouseDragDialog
+from dialogs.loop_dialog import LoopDialog
+from dialogs.advanced_options_dialog import AdvancedOptionsDialog
+from dialogs.setup_wait_range_dialog import SetupWaitRangeDialog
+from dialogs.setup_move_click_time_range_dialog import SetupMoveClickTimeRangeDialog
+from dialogs.setup_coord_range_dialog import SetupCoordRangeDialog
+from dialogs.setup_click_coord_dialog import SetupClickCoordDialog
+from dialogs.setup_move_coord_dialog import SetupMoveCoordDialog
+from dialogs.setup_move_time_dialog import SetupMoveTimeDialog
+from dialogs.setup_time_range_dialog import SetupTimeRangeDialog
+from dialogs.setup_click_coord_range_dialog import SetupClickCoordRangeDialog
+from dialogs.speed_dialog import SpeedDialog
+
+from actions_executor import ActionExecutor
 from chat import ChatDialog
 import keyboard
 import pyautogui
 import copy
 import random
-
-class ActionExecutor(QThread):
-    update_action_index = pyqtSignal(int)
-    action_completed = pyqtSignal()
-
-    def __init__(self, actions, start_index=0, loop_count=1):
-        super().__init__()
-        self.actions = actions
-        self.start_index = start_index
-        self.running = True
-        self.loop_count = loop_count
-
-    def run(self):
-        for _ in range(self.loop_count):
-            if not self.running:
-                break
-            current_action_index = 0
-            while self.running and current_action_index < len(self.actions):
-                adjusted_index = current_action_index + self.start_index
-                self.update_action_index.emit(adjusted_index)
-                action = self.actions[current_action_index]
-                action.execute()
-                current_action_index += 1
-        self.action_completed.emit()
-
-    def stop_execution(self):
-        self.running = False
 
 class MainWindow(QMainWindow):
     run_stop_signal = pyqtSignal()
@@ -276,7 +274,7 @@ class MainWindow(QMainWindow):
         dialog = WaitDialog(self)
         if dialog.exec_() == QDialog.Accepted:
             time = dialog.result
-            action = Wait(time)
+            action = MouseWait(time)
             selected_index = self.actions_list_widget.currentRow()
             if selected_index != -1:
                 insert_position = selected_index + 1
@@ -381,11 +379,11 @@ class MainWindow(QMainWindow):
                     x, y = dialog.result
                     self.actions[selected_index] = MouseClick(x, y)
                     self.actions_list_widget.item(selected_index).setText(str(self.actions[selected_index]))
-            elif isinstance(action, Wait):
+            elif isinstance(action, MouseWait):
                 dialog = WaitDialog(self, action.time)
                 if dialog.exec_() == QDialog.Accepted:
                     time = dialog.result
-                    self.actions[selected_index] = Wait(time)
+                    self.actions[selected_index] = MouseWait(time)
                     self.actions_list_widget.item(selected_index).setText(str(self.actions[selected_index]))
             elif isinstance(action, MouseMoveClick):
                 dialog = MoveClickDialog(self, action.x, action.y, action.time)
@@ -492,7 +490,7 @@ class MainWindow(QMainWindow):
                     file.write(f"Move,{action.x},{action.y},{action.time}\n")
                 elif isinstance(action, MouseClick):
                     file.write(f"Click,{action.x},{action.y}\n")
-                elif isinstance(action, Wait):
+                elif isinstance(action, MouseWait):
                     file.write(f"Wait,{action.time}\n")
                 elif isinstance(action, MouseMoveClick):
                     file.write(f"MoveClick,{action.x},{action.y},{action.time}\n")
@@ -527,7 +525,7 @@ class MainWindow(QMainWindow):
                         action = MouseClick(int(parts[1]), int(parts[2]))
                         temp_actions.append(action)
                     elif parts[0] == "Wait" and len(parts) == 2:
-                        action = Wait(float(parts[1]))
+                        action = MouseWait(float(parts[1]))
                         temp_actions.append(action)
                     elif parts[0] == "MoveClick" and len(parts) == 4:
                         action = MouseMoveClick(int(parts[1]), int(parts[2]), float(parts[3]))
@@ -593,7 +591,7 @@ class MainWindow(QMainWindow):
                     self.actions_list_widget.insertItem(insert_position, f"Move: {action.x}, {action.y}, {action.time}")
                 elif isinstance(action, MouseClick):
                     self.actions_list_widget.insertItem(insert_position, f"Click: {action.x}, {action.y}")
-                elif isinstance(action, Wait):
+                elif isinstance(action, MouseWait):
                     self.actions_list_widget.insertItem(insert_position, f"Wait: {action.time}s")
                 elif isinstance(action, MouseMoveClick):
                     self.actions_list_widget.insertItem(insert_position, f"MoveClick: {action.x}, {action.y}, {action.time}")
@@ -720,7 +718,7 @@ class MainWindow(QMainWindow):
             return
 
         for action in self.actions:
-            if isinstance(action, Wait):
+            if isinstance(action, MouseWait):
                 action.time = random.uniform(min_time, max_time)
         self.update_actions_history()   
         self.refresh_actions_listbox()
@@ -754,7 +752,7 @@ class MainWindow(QMainWindow):
             return
 
         for action in self.actions:
-            if isinstance(action, Wait):
+            if isinstance(action, MouseWait):
                 action.time = max(0.01, action.time + random.uniform(-time, time))
         self.update_actions_history()
         self.refresh_actions_listbox()
@@ -786,7 +784,7 @@ class MainWindow(QMainWindow):
         for action in self.actions:
             if isinstance(action, MouseMove) or isinstance(action, MouseMoveClick) or isinstance(action, MouseDrag):
                 action.time = round(action.time / multiplier, 6)
-            elif isinstance(action, Wait):
+            elif isinstance(action, MouseWait):
                 action.time = round(action.time / multiplier, 6)
             elif isinstance(action, MousePath):
                 for i in range(len(action.points)):
@@ -804,7 +802,7 @@ class MainWindow(QMainWindow):
                 self.actions_list_widget.addItem(f"Move: {action.x}, {action.y}, {action.time:.2f}s")
             elif isinstance(action, MouseClick):
                 self.actions_list_widget.addItem(f"Click: {action.x}, {action.y}")
-            elif isinstance(action, Wait):
+            elif isinstance(action, MouseWait):
                 self.actions_list_widget.addItem(f"Wait: {action.time:.2f}s")
             elif isinstance(action, MouseMoveClick):
                 self.actions_list_widget.addItem(f"MoveClick: {action.x}, {action.y}, {action.time:.2f}s")

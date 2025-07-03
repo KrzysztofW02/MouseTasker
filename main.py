@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import QApplication
-from MouseTasker import MainWindow
+from mouse_tasker import MainWindow
 import qtvscodestyle as qtvsc
 
 if __name__ == "__main__":

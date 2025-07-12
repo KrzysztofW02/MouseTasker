@@ -2,13 +2,22 @@ from actions.mouse_action import MouseAction
 import pyautogui
 
 class MouseDrag(MouseAction):
-    def __init__(self, x, y, time):
-        self.x = x 
-        self.y = y
-        self.time = time
+    """Drag the mouse cursor to the given (x, y) coordinates over a specified duration.
 
-    def __str__(self):
-        return f"MouseDrag: {self.x}, {self.y}, {self.time}s"
+    Attributes:
+        x (int): Target x-coordinate.
+        y (int): Target y-coordinate.
+        duration (float): Time in seconds over which the drag occurs.
+    """
+
+    def __init__(self, x: int, y: int, duration: float) -> None:
+        self.x = x
+        self.y = y
+        self.duration = duration
+
+    def __str__(self) -> str:
+        return f"MouseDrag: {self.x}, {self.y}, {self.duration}s"
     
-    def execute(self):
-        pyautogui.dragTo(self.x, self.y, self.time, button='left')
+    def execute(self) -> None:
+        """Perform the drag using pyautogui.dragTo."""
+        pyautogui.dragTo(self.x, self.y, self.duration, button='left')

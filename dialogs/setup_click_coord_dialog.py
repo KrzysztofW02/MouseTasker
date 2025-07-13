@@ -2,7 +2,14 @@ from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton
 from PyQt5.QtGui import QIntValidator
 
 class SetupClickCoordDialog(QDialog):
-    def __init__(self, parent=None):
+    """Dialog for configuring a random coordinate range for click actions.
+
+    Attributes:
+        result (tuple): A 4-element tuple containing min_x, max_x, min_y, max_y as integers.
+    """
+
+    def __init__(self, parent=None) -> None:
+        """Initialize the dialog layout and input fields for coordinate ranges."""
         super().__init__(parent)
         self.setWindowTitle("Setup Click Coordinate Range")
         self.layout = QVBoxLayout()
@@ -33,8 +40,9 @@ class SetupClickCoordDialog(QDialog):
         
         self.setLayout(self.layout)
         self.result = None
-    
-    def accept(self):
+
+    def accept(self) -> None:
+        """Validate and store the coordinate range as a tuple (min_x, max_x, min_y, max_y)."""
         if not self.min_x_input.text() or not self.max_x_input.text() or not self.min_y_input.text() or not self.max_y_input.text():
             QMessageBox.warning(self, "Warning", "All fields must be filled out.")
             return

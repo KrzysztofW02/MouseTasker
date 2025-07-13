@@ -1,15 +1,21 @@
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox, QHBoxLayout
 
 class LoopDialog(QDialog):
-    def __init__(self, parent=None):
+    """Dialog for specifying how many times to repeat an action.
+
+    Attributes:
+        loop_count (int): Number of loops entered by the user (set on accept).
+    """
+
+    def __init__(self, parent=None) -> None:
+        """Initialize the loop-count dialog with OK/Cancel buttons."""
         super().__init__(parent)
         self.setWindowTitle("Run in Loop")
+
         self.layout = QVBoxLayout()
+        self.layout.addWidget(QLabel("Enter number of loops:"))
 
-        self.label = QLabel("Enter number of loops:")
-        self.layout.addWidget(self.label)
-
-        self.input_field = QLineEdit()
+        self.input_field = QLineEdit(self)
         self.layout.addWidget(self.input_field)
 
         self.button_box = QHBoxLayout()
@@ -23,11 +29,16 @@ class LoopDialog(QDialog):
         self.layout.addLayout(self.button_box)
         self.setLayout(self.layout)
 
-    def accept(self):
+        # Initialize as zero will be set to a positive integer on accept
+        self.loop_count = 0
+
+    def accept(self) -> None:
+        """Validate input as a positive integer and close dialog."""
         try:
-            self.loop_count = int(self.input_field.text())
-            if self.loop_count <= 0:
+            value = int(self.input_field.text())
+            if value <= 0:
                 raise ValueError
+            self.loop_count = value
             super().accept()
         except ValueError:
             QMessageBox.warning(self, "Invalid Input", "Please enter a positive integer.")

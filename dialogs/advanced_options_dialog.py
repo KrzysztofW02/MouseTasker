@@ -1,7 +1,14 @@
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QPushButton
 
 class AdvancedOptionsDialog(QDialog):
-    def __init__(self, parent=None, main_application=None):
+    """Dialog presenting advanced/randomization options and offsets.
+
+    Attributes:
+        main_application (Optional[MainApplication]):
+            Reference to the main application used to open setup dialogs.
+    """
+    def __init__(self, parent=None, main_application=None) -> None:
+        """Initialize the dialog with buttons for each advanced option."""
         super().__init__(parent)
         self.main_application = main_application
         self.setWindowTitle("Advanced Options")

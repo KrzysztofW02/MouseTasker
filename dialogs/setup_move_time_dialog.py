@@ -2,6 +2,12 @@ from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton
 from dialogs.custom_double_validator import CustomDoubleValidator
 
 class SetupMoveTimeDialog(QDialog):
+    """Dialog to set a range value used to randomly increase or decrease
+    the time for move and moveClick actions by range.
+
+    Attributes:
+        result (float): The range value entered by the user for time adjustment.
+    """
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Setup Move, MoveClicks Time")
@@ -10,6 +16,7 @@ class SetupMoveTimeDialog(QDialog):
         self.time_input = QLineEdit(self)
         
         double_validator = CustomDoubleValidator()
+        # Input for the randomness range (will be added/subtracted from original time)
         self.time_input.setValidator(double_validator)
         
         self.layout.addWidget(QLabel("Range:"))

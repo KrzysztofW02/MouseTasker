@@ -2,7 +2,15 @@ from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton
 from PyQt5.QtGui import QIntValidator
 
 class ClickDialog(QDialog):
-    def __init__(self, parent=None, x=None, y=None):
+    """Dialog for entering X and Y coordinates for a click action.
+
+    Attributes:
+        x_input (QLineEdit): Input field for the X-coordinate.
+        y_input (QLineEdit): Input field for the Y-coordinate.
+        result (Optional[Tuple[int, int]]): Tuple of (x, y) after acceptance, or None.
+    """
+    def __init__(self, parent=None, x=None, y=None) -> None:
+        """Initialize the dialog, pre-filling coordinates if provided."""
         super().__init__(parent)
         self.setWindowTitle("Click Action")
         
@@ -32,6 +40,7 @@ class ClickDialog(QDialog):
         self.result = None
 
     def accept(self):
+        """Validate inputs and set result before closing."""
         if not self.x_input.text() or not self.y_input.text():
             QMessageBox.warning(self, "Warning", "All fields must be filled out.")
             return

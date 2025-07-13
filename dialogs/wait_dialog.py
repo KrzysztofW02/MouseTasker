@@ -2,7 +2,15 @@ from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton
 from dialogs.custom_double_validator import CustomDoubleValidator
 
 class WaitDialog(QDialog):
-    def __init__(self, parent=None, time=None):
+    """Dialog for specifying a wait time in seconds.
+
+    Attributes:
+        time_input (QLineEdit): Input field for the wait time.
+        result (float): Parsed time value entered by the user.
+    """
+
+    def __init__(self, parent=None, time=None) -> None:
+        """Initialize the wait time dialog and set up input field."""
         super().__init__(parent)
         self.setWindowTitle("Wait Action")
         
@@ -25,7 +33,8 @@ class WaitDialog(QDialog):
         self.setLayout(self.layout)
         self.result = None
 
-    def accept(self):
+    def accept(self) -> None:
+        """Validate the input and store the result as a float."""
         if not self.time_input.text():
             QMessageBox.warning(self, "Warning", "All fields must be filled out.")
             return

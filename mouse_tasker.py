@@ -28,7 +28,7 @@ from dialogs.setup_time_range_dialog import SetupTimeRangeDialog
 from dialogs.setup_click_coord_range_dialog import SetupClickCoordRangeDialog
 from dialogs.speed_dialog import SpeedDialog
 
-from actions_executor import ActionExecutor
+from actions.actions_executor import ActionExecutor
 from chat import ChatDialog
 import keyboard
 import pyautogui

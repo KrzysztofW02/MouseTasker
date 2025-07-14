@@ -10,15 +10,15 @@ class MouseMoveClick(MouseAction):
         duration (float): Time in seconds over which the move occurs.
     """
 
-    def __init__(self, x: int, y: int, duration: float) -> None:
+    def __init__(self, x: int, y: int, time: float) -> None:
         self.x = x
         self.y = y
-        self.duration = duration
+        self.time = time
 
     def __str__(self) -> str:
-        return f"MoveClick: ({self.x}, {self.y}, {self.duration}s)"
+        return f"MoveClick: ({self.x}, {self.y}, {self.time}s)"
 
     def execute(self) -> None:
         """Perform the move and click using pyautogui."""
-        pyautogui.moveTo(self.x, self.y, self.duration)
+        pyautogui.moveTo(self.x, self.y, self.time)
         pyautogui.click()

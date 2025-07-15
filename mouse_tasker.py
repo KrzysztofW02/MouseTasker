@@ -42,6 +42,7 @@ class MainWindow(QMainWindow):
     start_recording_signal = pyqtSignal()
 
     def __init__(self):
+        """Initialize UI, state variables, and connect signals and shortcuts."""
         super().__init__()
         self.setWindowTitle("MouseTasker")
         self.actions = []
@@ -71,6 +72,7 @@ class MainWindow(QMainWindow):
         self.start_recording_signal.connect(self.toggle_recording)
 
     def setup_shortcuts(self):
+        """Register keyboard shortcuts for controlling actions and dialogs."""
         keyboard.add_hotkey('f1', self.run_stop_signal.emit)
         keyboard.add_hotkey('f2', self.run_stop_loop_signal.emit)
         keyboard.add_hotkey('f3', self.check_coordinates_signal.emit)
@@ -104,18 +106,20 @@ class MainWindow(QMainWindow):
         shortcut_select_all_actions.activated.connect(self.load_actions)
 
     def refresh_ui(self):
+        """Clear and rebuild the main UI layout."""
         for i in reversed(range(self.layout.count())):
             widget = self.layout.itemAt(i).widget()
-            if widget is not None:
+            if widget:
                 widget.deleteLater()
         self.setup_ui()
 
-    def setup_ui(self):
+    def setup_ui(self) -> None:
+        """Create and arrange all main window widgets and layouts."""
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
-        self.layout = QVBoxLayout()
-        self.central_widget.setLayout(self.layout)
+        self.layout = QVBoxLayout(self.central_widget)
 
+        # Top buttons (record, add actions, chat, run)
         self.top_buttons_layout = QHBoxLayout()
         self.layout.addLayout(self.top_buttons_layout)
 
@@ -143,27 +147,26 @@ class MainWindow(QMainWindow):
         self.chat_button.clicked.connect(self.open_chat_dialog)
         self.top_buttons_layout.addWidget(self.chat_button)
 
+        # Run menu (single run & loop)
         self.run_button = QPushButton("Run")
-        self.run_menu = QMenu()
+        self.run_menu = QMenu(self)
         self.run_action = QAction("Run", self)
         self.run_loop_action = QAction("Run in Loop", self)
-
         self.run_menu.addAction(self.run_action)
         self.run_menu.addAction(self.run_loop_action)
-
         self.run_action.triggered.connect(self.run_actions)
         self.run_loop_action.triggered.connect(self.run_actions_in_loop)
-        
         self.run_button.setMenu(self.run_menu)
-        
         self.top_buttons_layout.addWidget(self.run_button)
 
-        self.actions_list_widget = QListWidget()
+        # Actions list
+        self.actions_list_widget = QListWidget(self)
         self.actions_list_widget.itemDoubleClicked.connect(self.edit_action)
         self.actions_list_widget.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.actions_list_widget.setStyleSheet("QListWidget { font-size: 11pt; }")
         self.layout.addWidget(self.actions_list_widget)
 
+        # Bottom buttons (check, save, load, edit, delete, help, advanced options)
         self.bottom_buttons_layout = QHBoxLayout()
         self.layout.addLayout(self.bottom_buttons_layout)
 
@@ -191,12 +194,12 @@ class MainWindow(QMainWindow):
         self.help_button.clicked.connect(self.show_shortcuts)
         self.bottom_buttons_layout.addWidget(self.help_button)
 
-        self.Advanced_Options_button = QPushButton("Advanced Options")
-        self.Advanced_Options_button.clicked.connect(self.open_advanced_options_dialog)
-        self.bottom_buttons_layout.addWidget(self.Advanced_Options_button)
+        self.advanced_options_button = QPushButton("Advanced Options")
+        self.advanced_options_button.clicked.connect(self.open_advanced_options_dialog)
+        self.bottom_buttons_layout.addWidget(self.advanced_options_button)
 
-    #Menu bar
     def create_menu(self):
+        """Set up the main menu bar with File, Edit, and Help menus."""
         menu_bar = QMenuBar()
         self.setMenuBar(menu_bar)
 
@@ -236,12 +239,14 @@ class MainWindow(QMainWindow):
         shortcuts_action.triggered.connect(self.show_shortcuts)
         help_menu.addAction(shortcuts_action)
     
-    def show_about_dialog(self):
-        QMessageBox.about(self, "About Me", "Author: Krzysztof Wąsik\n" \
-                                "GitHub: github.com/KrzysztofW02\n" \
-                                "Contact: Krzysztof.Wasik2002@gmail.com\n")
+    def show_about_dialog(self): 
+        """Display an About dialog with GitHub and contact information."""
+        QMessageBox.about(self, "About Me",
+                                "Contact: Krzysztof.Wasik2002@gmail.com\n\n" \
+                                "GitHub: github.com/KrzysztofW02/MouseTasker\n")
 
     def add_move(self):
+        """Open MoveDialog and insert a MouseMove action if accepted."""
         dialog = MoveDialog(self)
         if dialog.exec_() == QDialog.Accepted:
             x, y, time = dialog.result
@@ -257,6 +262,7 @@ class MainWindow(QMainWindow):
         
 
     def add_click(self):
+        """Open ClickDialog and insert a MouseClick action if accepted."""
         dialog = ClickDialog(self)
         if dialog.exec_() == QDialog.Accepted:
             x, y = dialog.result
@@ -271,6 +277,7 @@ class MainWindow(QMainWindow):
             self.update_actions_history()
 
     def add_wait(self):
+        """Open WaitDialog and insert a MouseWait action if accepted."""
         dialog = WaitDialog(self)
         if dialog.exec_() == QDialog.Accepted:
             time = dialog.result
@@ -285,6 +292,7 @@ class MainWindow(QMainWindow):
             self.update_actions_history()
     
     def add_move_click(self):
+        """Open MoveClickDialog and insert a MouseMoveClick action if accepted."""
         dialog = MoveClickDialog(self)
         if dialog.exec_() == QDialog.Accepted:
             x, y, time = dialog.result
@@ -299,6 +307,7 @@ class MainWindow(QMainWindow):
             self.update_actions_history()
 
     def add_mouse_drag(self):
+        """Open MouseDragDialog and insert a MouseDrag action if accepted."""
         dialog = MouseDragDialog(self)
         if dialog.exec_() == QDialog.Accepted:
             x, y, time = dialog.result
@@ -313,6 +322,7 @@ class MainWindow(QMainWindow):
             self.update_actions_history()
 
     def start_recording(self):
+        """Begin mouse movement recording and update button states."""
         if not hasattr(self, 'mouse_recorder'):
             self.mouse_recorder = MouseRecord()
         self.mouse_recorder.start()
@@ -320,6 +330,7 @@ class MainWindow(QMainWindow):
         self.stop_recording_button.setEnabled(True)
 
     def stop_recording(self):
+        """Stop mouse movement recording, retrieve actions, and add them to the main list."""
         if hasattr(self, 'mouse_recorder'):
             self.mouse_recorder.stop()
             recorded_actions = self.mouse_recorder.get_actions()
@@ -328,6 +339,7 @@ class MainWindow(QMainWindow):
         self.stop_recording_button.setEnabled(False)
 
     def add_recorded_actions_to_main_list(self, recorded_actions):
+        "Insert recorded actions into the main actions list at the selected position."""
         selected_index = self.actions_list_widget.currentRow()
         if selected_index != -1:
             insert_position = selected_index + 1
@@ -342,6 +354,7 @@ class MainWindow(QMainWindow):
         self.update_actions_history()
 
     def toggle_recording(self):
+        """Toggle mouse recording on or off, updating the button text accordingly."""
         if not hasattr(self, 'mouse_recorder'):
             self.mouse_recorder = MouseRecord()
 
@@ -355,6 +368,7 @@ class MainWindow(QMainWindow):
             self.recording_button.setText("Start Recording")
 
     def open_chat_dialog(self):
+        """Open the chat dialog if not already open, or bring it to the front."""
         if self.chat_dialog is None:
             self.chat_dialog = ChatDialog(self)
         self.chat_dialog.show()
@@ -363,6 +377,7 @@ class MainWindow(QMainWindow):
 
 
     def edit_action(self):
+        """Open the appropriate dialog to edit the selected action."""
         selected_items = self.actions_list_widget.selectedItems()
         if selected_items:
             selected_index = self.actions_list_widget.row(selected_items[0])
@@ -400,6 +415,7 @@ class MainWindow(QMainWindow):
             self.update_actions_history()
 
     def delete_action(self):
+        """Delete selected actions from the list and update history."""
         selected_items = self.actions_list_widget.selectedItems()
         if selected_items:
             selected_indices = sorted([self.actions_list_widget.row(item) for item in selected_items], reverse=True)
@@ -410,18 +426,21 @@ class MainWindow(QMainWindow):
             self.update_actions_history()
 
     def toggle_run_stop_actions(self):
+        """Toggle running or stopping the action executor thread."""
         if not self.actions_running:
             self.run_actions()
         else:
             self.stop_actions()
 
     def toogle_run_stop_loop_actions(self):
+        """Toggle running or stopping the action executor thread in loop mode."""
         if not self.actions_running:
             self.run_actions_in_loop()
         else:
             self.stop_actions()
 
     def run_actions(self):
+        """Start executing actions from the selected index or from the beginning if none selected."""
         if self.actions_running:
             QMessageBox.warning(self, "Already Running", "Actions are already running.")
             return
@@ -444,6 +463,7 @@ class MainWindow(QMainWindow):
         self.actions_running = True
 
     def run_actions_in_loop(self):
+        """Start executing actions in a loop with an optional loop count dialog."""
         if self.actions_running:
             QMessageBox.warning(self, "Already Running", "Actions are already running.")
             return
@@ -465,6 +485,7 @@ class MainWindow(QMainWindow):
 
 
     def stop_actions(self):
+        """Stop the action executor thread if it is running."""
         if self.executor_thread and self.executor_thread.isRunning():
             self.executor_thread.stop_execution()
             self.executor_thread.wait()
@@ -472,13 +493,15 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, "Info", "Actions have been stopped.")
 
     def highlight_action(self, index):
+        """Highlight the currently executing action in the actions list."""
         self.actions_list_widget.setCurrentRow(index)
 
     def on_actions_completed(self):
+        """Handle the completion of action execution, resetting the state."""
         self.actions_running = False
 
-        # SAVE AND LOAD ACTIONS
     def save_actions(self):
+        """Open a file dialog to save the current actions to a text file."""
         filepath, _ = QFileDialog.getSaveFileName(self, "Save Actions", "", "Text Files (*.txt);;All Files (*)")
         if not filepath:
             return
@@ -503,6 +526,7 @@ class MainWindow(QMainWindow):
                     file.write("PathEnd\n")  
 
     def load_actions(self):
+        """Open a file dialog to load actions from a text file, replacing the current actions."""
         if QMessageBox.warning(self, "Warning", "Loading a new file will remove your current actions list. Would you like to continue?",
                             QMessageBox.Yes | QMessageBox.No) == QMessageBox.No:
             return
@@ -554,6 +578,7 @@ class MainWindow(QMainWindow):
             self.actions_list_widget.addItem(str(action))           
     
     def select_all_actions(self):
+        """Select all actions in the actions list widget."""
         self.actions_list_widget.clearSelection() 
 
         for i in range(self.actions_list_widget.count()):
@@ -561,6 +586,7 @@ class MainWindow(QMainWindow):
             item.setSelected(True)
     
     def show_shortcuts(self):
+        """Display a message box with the keyboard shortcuts for the application."""
         message = "Copy: Ctrl+C      " \
                   "Undo: Ctrl+Z\n\n" \
                   "Save: Ctrl+S      " \
@@ -576,11 +602,13 @@ class MainWindow(QMainWindow):
         QMessageBox.information(self, "Shortcuts", message)
 
     def copy_action(self):
+        """Copy the selected actions to a temporary list for pasting later."""
         selected_items = self.actions_list_widget.selectedItems()
         if selected_items:
             self.copied_actions = [copy.deepcopy(self.actions[self.actions_list_widget.row(item)]) for item in selected_items]
 
     def paste_action(self):
+        """Paste the copied actions into the actions list at the selected position."""
         if hasattr(self, 'copied_actions') and self.copied_actions:
             selected_index = self.actions_list_widget.currentRow()
             insert_position = selected_index + 1 if selected_index != -1 else len(self.actions)
@@ -602,6 +630,7 @@ class MainWindow(QMainWindow):
             self.update_actions_history()
     
     def undo_action(self):
+        """Undo the last action by restoring the previous state from the history."""
         if len(self.actions_history) > 1: 
             self.actions_history.pop()  
             self.actions = self.actions_history[-1]  
@@ -612,190 +641,11 @@ class MainWindow(QMainWindow):
             self.refresh_actions_listbox()
 
     def update_actions_history(self):
+        """Update the actions history with a deep copy of the current actions."""
         self.actions_history.append(copy.deepcopy(self.actions))
 
-    def open_advanced_options_dialog(self):
-        dialog = AdvancedOptionsDialog(self, self)
-        dialog.exec_()
-
-    def open_setup_wait_range_dialog(self):
-        dialog = SetupWaitRangeDialog(self)
-        if dialog.exec_() == QDialog.Accepted:
-            min_time, max_time = dialog.result
-            self.random_time_in_wait(min_time, max_time)
-
-    def open_setup_move_time_dialog(self):
-        dialog = SetupMoveClickTimeRangeDialog(self)
-        if dialog.exec_() == QDialog.Accepted:
-            min_time, max_time = dialog.result
-            self.random_time_in_moves_movesclicks(min_time, max_time)
-
-    def open_setup_move_coord_dialog(self):
-        dialog = SetupCoordRangeDialog(self)
-        if dialog.exec_() == QDialog.Accepted:
-            x_min, x_max, y_min, y_max = dialog.result
-            self.random_coord_in_moves_moveclicks(x_min, x_max, y_min, y_max)
-
-    def open_setup_click_coord_dialog(self):
-        dialog = SetupClickCoordDialog(self)
-        if dialog.exec_() == QDialog.Accepted:
-            x_min, x_max, y_min, y_max = dialog.result
-            self.random_coord_in_clicks(x_min, x_max, y_min, y_max)
-
-    def open_setup_coord_range_dialog(self):
-        dialog = SetupMoveCoordDialog(self)
-        if dialog.exec_() == QDialog.Accepted:
-            x = dialog.result
-            self.change_coord_in_moves_moveclicks(x)
-    
-    def open_setup_moveclick_time_range_dialog(self):
-        dialog = SetupMoveTimeDialog(self)
-        if dialog.exec_() == QDialog.Accepted:
-            time = dialog.result
-            self.change_time_in_moves_movesclicks(time)
-    
-    def open_setup_time_range_dialog(self):
-        dialog = SetupTimeRangeDialog(self)
-        if dialog.exec_() == QDialog.Accepted:
-            time = dialog.result
-            self.change_random_time_in_wait(time)
-
-    def open_setup_click_coord_range_dialog(self):
-        dialog = SetupClickCoordRangeDialog(self)
-        if dialog.exec_() == QDialog.Accepted:
-            x = dialog.result
-            self.change_random_coord_in_clicks(x)
-            
-
-
-    def random_time_in_moves_movesclicks(self, min_time, max_time):
-        if not self.actions:
-            QMessageBox.warning(self, "Warning", "No actions to randomize time for.")
-            return
-
-        for action in self.actions:
-            if isinstance(action, (MouseMove, MouseMoveClick)):
-                action.time = random.uniform(min_time, max_time)
-        self.update_actions_history()        
-        self.refresh_actions_listbox()
-
-
-    def random_coord_in_moves_moveclicks(self, x_min, x_max, y_min, y_max):
-        if not self.actions:
-            QMessageBox.warning(self, "Warning", "No actions to randomize coordinates for.")
-            return
-
-        screen_width, screen_height = pyautogui.size()
-        x_max = x_max if x_max is not None else screen_width
-        y_max = y_max if y_max is not None else screen_height
-
-        for action in self.actions:
-            if isinstance(action, (MouseMove, MouseMoveClick)):
-                action.x = random.randint(x_min, x_max)
-                action.y = random.randint(y_min, y_max)
-        self.update_actions_history()   
-        self.refresh_actions_listbox()
-
-    def random_coord_in_clicks(self, x_min=0, x_max=None, y_min=0, y_max=None):
-        if not self.actions:
-            QMessageBox.warning(self, "Warning", "No actions to randomize coordinates for.")
-            return
-        
-        screen_width, screen_height = pyautogui.size()
-        x_max = x_max if x_max is not None else screen_width
-        y_max = y_max if y_max is not None else screen_height
-
-        for action in self.actions:
-            if isinstance(action, MouseClick):
-                action.x = random.randint(x_min, x_max)
-                action.y = random.randint(y_min, y_max)
-        self.update_actions_history()   
-        self.refresh_actions_listbox()
-
-    def random_time_in_wait(self, min_time, max_time):
-        if not self.actions:
-            QMessageBox.warning(self, "Warning", "No actions to randomize time for.")
-            return
-
-        for action in self.actions:
-            if isinstance(action, MouseWait):
-                action.time = random.uniform(min_time, max_time)
-        self.update_actions_history()   
-        self.refresh_actions_listbox()
-
-    def change_coord_in_moves_moveclicks(self, x):
-        if not self.actions: 
-            QMessageBox.warning(self, "Warning", "No actions to change coordinates for.")
-            return
-        
-        for action in self.actions:
-            if isinstance(action, (MouseMove, MouseMoveClick)):
-                action.x = action.x + random.randint(-x, x)
-                action.y = action.y + random.randint(-x, x)
-        self.update_actions_history()
-        self.refresh_actions_listbox()
-
-    def change_time_in_moves_movesclicks(self, time):
-        if not self.actions:
-            QMessageBox.warning(self, "Warning", "No actions to change time for.")
-            return
-
-        for action in self.actions:
-            if isinstance(action, (MouseMove, MouseMoveClick)):
-                action.time = max(0.01, action.time + random.uniform(-time, time))
-        self.update_actions_history()
-        self.refresh_actions_listbox()
-
-    def change_random_time_in_wait(self, time):
-        if not self.actions:
-            QMessageBox.warning(self, "Warning", "No actions to change time for.")
-            return
-
-        for action in self.actions:
-            if isinstance(action, MouseWait):
-                action.time = max(0.01, action.time + random.uniform(-time, time))
-        self.update_actions_history()
-        self.refresh_actions_listbox()
-    
-    def change_random_coord_in_clicks(self, x):
-        if not self.actions:
-            QMessageBox.warning(self, "Warning", "No actions to change coordinates for.")
-            return
-
-        for action in self.actions:
-            if isinstance(action, MouseClick):
-                action.x = action.x + random.randint(-x, x)
-                action.y = action.y + random.randint(-x, x)
-        self.update_actions_history()
-        self.refresh_actions_listbox()
-
-        #SPEED MULTIPLIER
-    def open_setup_speed_dialog(self):
-        dialog = SpeedDialog(self)
-        if dialog.exec() == QDialog.Accepted and dialog.selected_speed:
-            self.apply_speed_multiplier(dialog.selected_speed)
-
-            QMessageBox.information(self, "Speed Set", f"Speed multiplier set to x{dialog.selected_speed}")
-
-    def apply_speed_multiplier(self, multiplier): 
-        if not isinstance(multiplier, (int, float)) or multiplier <= 0:
-            multiplier = 1.0
-
-        for action in self.actions:
-            if isinstance(action, MouseMove) or isinstance(action, MouseMoveClick) or isinstance(action, MouseDrag):
-                action.time = round(action.time / multiplier, 6)
-            elif isinstance(action, MouseWait):
-                action.time = round(action.time / multiplier, 6)
-            elif isinstance(action, MousePath):
-                for i in range(len(action.points)):
-                    x, y, time_delta = action.points[i]
-                    new_time_delta = round(time_delta / multiplier, 6)
-                    action.points[i] = (x, y, new_time_delta)
-
-        self.update_actions_history()
-        self.refresh_actions_listbox()
-
     def refresh_actions_listbox(self):
+        """Refresh the actions list widget to display the current actions."""
         self.actions_list_widget.clear()
         for action in self.actions:
             if isinstance(action, MouseMove):
@@ -812,6 +662,7 @@ class MainWindow(QMainWindow):
                 self.actions_list_widget.addItem(f"Path with {len(action.points)} points")
 
     def check_coordinates(self):
+        """Display the current mouse position and provide options to add actions based on it."""
         x, y = pyautogui.position()
         coord_window = QMessageBox(self)
         coord_window.setWindowTitle("Current Mouse Position")
@@ -848,4 +699,213 @@ class MainWindow(QMainWindow):
             self.actions.insert(insert_position, mouse_drag_action)
             self.actions_list_widget.insertItem(insert_position, f"MouseDrag: {mouse_drag_action.x}, {mouse_drag_action.y}, {mouse_drag_action.time}s")
 
+        self.update_actions_history()    
+
+    ### --------- Advanced Options --------- ###
+
+    def open_advanced_options_dialog(self):
+        """Open the Advanced Options dialog to configure various settings."""
+        dialog = AdvancedOptionsDialog(self, self)
+        dialog.exec_()
+
+    def open_setup_wait_range_dialog(self):
+        """Open the SetupWaitRangeDialog to set random wait time between minimum and maximum 
+        wait time range for all wait actions."""
+        dialog = SetupWaitRangeDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            min_time, max_time = dialog.result
+            self.random_time_in_wait(min_time, max_time)
+
+    def open_setup_move_time_dialog(self):
+        """Open the SetupMoveClickTimeRangeDialog to set a time range (min/max) for randomizing 
+        duration in move or move-click actions."""
+        dialog = SetupMoveClickTimeRangeDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            min_time, max_time = dialog.result
+            self.random_time_in_moves_movesclicks(min_time, max_time)
+
+    def open_setup_move_coord_dialog(self):
+        """Open the SetupCoordRangeDialog to set a coordinate range (min/max for X and Y) for 
+        randomizing coordinates in move and move-click actions."""
+        dialog = SetupCoordRangeDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            x_min, x_max, y_min, y_max = dialog.result
+            self.random_coord_in_moves_moveclicks(x_min, x_max, y_min, y_max)
+
+    def open_setup_click_coord_dialog(self):
+        """Open the SetupClickCoordDialog to set a coordinate range (min/max for X and Y) for 
+        randomizing coordinates in click actions."""
+        dialog = SetupClickCoordDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            x_min, x_max, y_min, y_max = dialog.result
+            self.random_coord_in_clicks(x_min, x_max, y_min, y_max)
+
+    def open_setup_coord_range_dialog(self):
+        """Open the SetupMoveCoordDialog to set a random range value for move and move-click coordinates"""
+        dialog = SetupMoveCoordDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            x = dialog.result
+            self.change_coord_in_moves_moveclicks(x)
+    
+    def open_setup_moveclick_time_range_dialog(self):
+        """Open the SetupMoveTimeDialog to set a range value used to randomly increase or decrease 
+        the time for move and moveClick actions by range"""
+        dialog = SetupMoveTimeDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            time = dialog.result
+            self.change_time_in_moves_movesclicks(time)
+    
+    def open_setup_time_range_dialog(self):
+        """Open the SetupTimeRangeDialog to set a range value used to randomly increase or decrease
+        the time for wait actions by range."""
+        dialog = SetupTimeRangeDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            time = dialog.result
+            self.change_random_time_in_wait(time)
+
+    def open_setup_click_coord_range_dialog(self):
+        """Open the SetupClickCoordRangeDialog to set a coordinate offset range to apply randomness
+        to existing click actions positions"""
+        dialog = SetupClickCoordRangeDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            x = dialog.result
+            self.change_random_coord_in_clicks(x)
+            
+    def random_time_in_moves_movesclicks(self, min_time, max_time):
+        """Randomize the time for MouseMove and MouseMoveClick actions within a specified range (min/max)."""
+        if not self.actions:
+            QMessageBox.warning(self, "Warning", "No actions to randomize time for.")
+            return
+
+        for action in self.actions:
+            if isinstance(action, (MouseMove, MouseMoveClick)):
+                action.time = random.uniform(min_time, max_time)
+        self.update_actions_history()        
+        self.refresh_actions_listbox()
+
+
+    def random_coord_in_moves_moveclicks(self, x_min, x_max, y_min, y_max):
+        """Randomize the coordinates for MouseMove and MouseMoveClick actions within specified coordinate 
+        range (min/max for X and Y)."""
+        if not self.actions:
+            QMessageBox.warning(self, "Warning", "No actions to randomize coordinates for.")
+            return
+
+        screen_width, screen_height = pyautogui.size()
+        x_max = x_max if x_max is not None else screen_width
+        y_max = y_max if y_max is not None else screen_height
+
+        for action in self.actions:
+            if isinstance(action, (MouseMove, MouseMoveClick)):
+                action.x = random.randint(x_min, x_max)
+                action.y = random.randint(y_min, y_max)
+        self.update_actions_history()   
+        self.refresh_actions_listbox()
+
+    def random_coord_in_clicks(self, x_min=0, x_max=None, y_min=0, y_max=None):
+        """Randomize the coordinates for MouseClick actions within specified ranges 
+        (min/max for X and Y)."""
+        if not self.actions:
+            QMessageBox.warning(self, "Warning", "No actions to randomize coordinates for.")
+            return
+        
+        screen_width, screen_height = pyautogui.size()
+        x_max = x_max if x_max is not None else screen_width
+        y_max = y_max if y_max is not None else screen_height
+
+        for action in self.actions:
+            if isinstance(action, MouseClick):
+                action.x = random.randint(x_min, x_max)
+                action.y = random.randint(y_min, y_max)
+        self.update_actions_history()   
+        self.refresh_actions_listbox()
+
+    def random_time_in_wait(self, min_time, max_time):
+        """Randomize the time for MouseWait actions within a specified range 
+        (min_time, max_time)."""
+        if not self.actions:
+            QMessageBox.warning(self, "Warning", "No actions to randomize time for.")
+            return
+
+        for action in self.actions:
+            if isinstance(action, MouseWait):
+                action.time = random.uniform(min_time, max_time)
+        self.update_actions_history()   
+        self.refresh_actions_listbox()
+
+    def change_coord_in_moves_moveclicks(self, x):
+        """Change the coordinates for MouseMove and MouseMoveClick actions by a random offset."""
+        if not self.actions: 
+            QMessageBox.warning(self, "Warning", "No actions to change coordinates for.")
+            return
+        
+        for action in self.actions:
+            if isinstance(action, (MouseMove, MouseMoveClick)):
+                action.x = action.x + random.randint(-x, x)
+                action.y = action.y + random.randint(-x, x)
         self.update_actions_history()
+        self.refresh_actions_listbox()
+
+    def change_time_in_moves_movesclicks(self, time):
+        """Change the time for MouseMove and MouseMoveClick actions by a random offset."""
+        if not self.actions:
+            QMessageBox.warning(self, "Warning", "No actions to change time for.")
+            return
+
+        for action in self.actions:
+            if isinstance(action, (MouseMove, MouseMoveClick)):
+                action.time = max(0.01, action.time + random.uniform(-time, time))
+        self.update_actions_history()
+        self.refresh_actions_listbox()
+
+    def change_random_time_in_wait(self, time):
+        """Change the time for MouseWait actions by a random offset."""
+        if not self.actions:
+            QMessageBox.warning(self, "Warning", "No actions to change time for.")
+            return
+
+        for action in self.actions:
+            if isinstance(action, MouseWait):
+                action.time = max(0.01, action.time + random.uniform(-time, time))
+        self.update_actions_history()
+        self.refresh_actions_listbox()
+    
+    def change_random_coord_in_clicks(self, x):
+        """Change the coordinates for MouseClick actions by a random offset."""
+        if not self.actions:
+            QMessageBox.warning(self, "Warning", "No actions to change coordinates for.")
+            return
+
+        for action in self.actions:
+            if isinstance(action, MouseClick):
+                action.x = action.x + random.randint(-x, x)
+                action.y = action.y + random.randint(-x, x)
+        self.update_actions_history()
+        self.refresh_actions_listbox()
+
+    def open_setup_speed_dialog(self):
+        """Open the SpeedDialog to set a speed multiplier for actions."""
+        dialog = SpeedDialog(self)
+        if dialog.exec() == QDialog.Accepted and dialog.selected_speed:
+            self.apply_speed_multiplier(dialog.selected_speed)
+
+            QMessageBox.information(self, "Speed Set", f"Speed multiplier set to x{dialog.selected_speed}")
+
+    def apply_speed_multiplier(self, multiplier):
+        """Apply a speed multiplier to the time attributes of MouseMove, MouseMoveClick, MouseDrag, and MouseWait actions.""" 
+        if not isinstance(multiplier, (int, float)) or multiplier <= 0:
+            multiplier = 1.0
+
+        for action in self.actions:
+            if isinstance(action, MouseMove) or isinstance(action, MouseMoveClick) or isinstance(action, MouseDrag):
+                action.time = round(action.time / multiplier, 6)
+            elif isinstance(action, MouseWait):
+                action.time = round(action.time / multiplier, 6)
+            elif isinstance(action, MousePath):
+                for i in range(len(action.points)):
+                    x, y, time_delta = action.points[i]
+                    new_time_delta = round(time_delta / multiplier, 6)
+                    action.points[i] = (x, y, new_time_delta)
+
+        self.update_actions_history()
+        self.refresh_actions_listbox()

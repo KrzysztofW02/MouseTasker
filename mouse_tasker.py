@@ -27,6 +27,7 @@ from dialogs.setup_move_time_dialog import SetupMoveTimeDialog
 from dialogs.setup_time_range_dialog import SetupTimeRangeDialog
 from dialogs.setup_click_coord_range_dialog import SetupClickCoordRangeDialog
 from dialogs.speed_dialog import SpeedDialog
+from dialogs.shortcuts_dialog import ShortcutsDialog
 
 from actions.actions_executor import ActionExecutor
 from chat import ChatDialog
@@ -584,22 +585,11 @@ class MainWindow(QMainWindow):
         for i in range(self.actions_list_widget.count()):
             item = self.actions_list_widget.item(i)
             item.setSelected(True)
-    
-    def show_shortcuts(self):
-        """Display a message box with the keyboard shortcuts for the application."""
-        message = "Copy: Ctrl+C      " \
-                  "Undo: Ctrl+Z\n\n" \
-                  "Save: Ctrl+S      " \
-                  "Paste: Ctrl+V\n\n" \
-                  "RUN / STOP: F1      " \
-                  "RUN LOOP / STOP: F2\n\n" \
-                  "Check Coordinates: F3      " \
-                  "Advanced Options: F4\n\n" \
-                  "Load: Ctrl+L      " \
-                  "Delete: Delete\n\n" \
-                  "Show Shortcuts: F5      " \
-                  "Start Recording: F10"
-        QMessageBox.information(self, "Shortcuts", message)
+
+    def show_shortcuts(self) -> None:
+        """Open a dialog displaying all keyboard shortcuts in a grid layout."""
+        dlg = ShortcutsDialog(self)
+        dlg.exec_()
 
     def copy_action(self):
         """Copy the selected actions to a temporary list for pasting later."""

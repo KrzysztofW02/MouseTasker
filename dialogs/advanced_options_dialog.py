@@ -14,21 +14,9 @@ class AdvancedOptionsDialog(QDialog):
         self.setWindowTitle("Advanced Options")
         layout = QVBoxLayout()
 
-        self.random_time_in_moves_movesclicks_button = QPushButton("Randomize Move/MoveClick Times")
-        self.random_time_in_moves_movesclicks_button.clicked.connect(self.random_time_in_moves_movesclicks)
-        layout.addWidget(self.random_time_in_moves_movesclicks_button)
-
-        self.random_coord_in_moves_moveclicks_button = QPushButton("Randomize Move/MoveClick Coordinates")
-        self.random_coord_in_moves_moveclicks_button.clicked.connect(self.random_coord_in_moves_moveclicks)
-        layout.addWidget(self.random_coord_in_moves_moveclicks_button)
-
-        self.random_coord_in_clicks_button = QPushButton("Randomize Click Coordinates")
-        self.random_coord_in_clicks_button.clicked.connect(self.random_coord_in_clicks)
-        layout.addWidget(self.random_coord_in_clicks_button)
-
-        self.random_time_in_wait_button = QPushButton("Randomize Wait Times")
-        self.random_time_in_wait_button.clicked.connect(self.random_time_in_wait)
-        layout.addWidget(self.random_time_in_wait_button)
+        self.speed_button = QPushButton("Speed")
+        self.speed_button.clicked.connect(self.open_speed_dialog)
+        layout.addWidget(self.speed_button)
 
         self.random_coord_in_moves_moveclicks_button2 = QPushButton("Offset Move/MoveClick Coordinates")
         self.random_coord_in_moves_moveclicks_button2.clicked.connect(self.change_coord_in_moves_moveclicks)
@@ -46,10 +34,21 @@ class AdvancedOptionsDialog(QDialog):
         self.random_coord_in_clicks2.clicked.connect(self.change_coord_in_clicks)
         layout.addWidget(self.random_coord_in_clicks2)
 
-        self.speed_button = QPushButton("Speed")
-        self.speed_button.clicked.connect(self.open_speed_dialog)
-        layout.addWidget(self.speed_button)
+        self.random_time_in_moves_movesclicks_button = QPushButton("Randomize Move/MoveClick Times")
+        self.random_time_in_moves_movesclicks_button.clicked.connect(self.random_time_in_moves_movesclicks)
+        layout.addWidget(self.random_time_in_moves_movesclicks_button)
 
+        self.random_coord_in_moves_moveclicks_button = QPushButton("Randomize Move/MoveClick Coordinates")
+        self.random_coord_in_moves_moveclicks_button.clicked.connect(self.random_coord_in_moves_moveclicks)
+        layout.addWidget(self.random_coord_in_moves_moveclicks_button)
+
+        self.random_coord_in_clicks_button = QPushButton("Randomize Click Coordinates")
+        self.random_coord_in_clicks_button.clicked.connect(self.random_coord_in_clicks)
+        layout.addWidget(self.random_coord_in_clicks_button)
+
+        self.random_time_in_wait_button = QPushButton("Randomize Wait Times")
+        self.random_time_in_wait_button.clicked.connect(self.random_time_in_wait)
+        layout.addWidget(self.random_time_in_wait_button)
 
         self.setLayout(layout)
 

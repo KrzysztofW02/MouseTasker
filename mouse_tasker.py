@@ -603,7 +603,9 @@ class MainWindow(QMainWindow):
             selected_index = self.actions_list_widget.currentRow()
             insert_position = selected_index + 1 if selected_index != -1 else len(self.actions)
 
-            for action in self.copied_actions:
+            actions_to_paste = [copy.deepcopy(action) for action in self.copied_actions]
+
+            for action in actions_to_paste:
                 self.actions.insert(insert_position, action)
                 if isinstance(action, MouseMove):
                     self.actions_list_widget.insertItem(insert_position, f"Move: {action.x}, {action.y}, {action.time}")
@@ -615,6 +617,8 @@ class MainWindow(QMainWindow):
                     self.actions_list_widget.insertItem(insert_position, f"MoveClick: {action.x}, {action.y}, {action.time}")
                 elif isinstance(action, MouseDrag):
                     self.actions_list_widget.insertItem(insert_position, f"MouseDrag: {action.x}, {action.y}, {action.time}")
+                elif isinstance(action, MousePath):
+                    self.actions_list_widget.insertItem(insert_position, f"Path with {len(action.points)} points")
                 insert_position += 1
 
             self.update_actions_history()
@@ -804,7 +808,7 @@ class MainWindow(QMainWindow):
         y_max = y_max if y_max is not None else screen_height
 
         for action in self.actions:
-            if isinstance(action, MouseClick):
+            if isinstance(action, MouseClick) and not isinstance(action, MousePath):
                 action.x = random.randint(x_min, x_max)
                 action.y = random.randint(y_min, y_max)
         self.update_actions_history()   
@@ -867,7 +871,7 @@ class MainWindow(QMainWindow):
             return
 
         for action in self.actions:
-            if isinstance(action, MouseClick):
+            if isinstance(action, MouseClick) and not isinstance(action, MousePath):
                 action.x = action.x + random.randint(-x, x)
                 action.y = action.y + random.randint(-x, x)
         self.update_actions_history()

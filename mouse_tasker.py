@@ -10,6 +10,7 @@ from actions.mouse_move_click import MouseMoveClick
 from actions.mouse_drag import MouseDrag
 from actions.mouse_path import MousePath
 from actions.mouse_record import MouseRecord
+from actions.mouse_transition import MouseTransition
 
 from dialogs.move_dialog import MoveDialog
 from dialogs.click_dialog import ClickDialog

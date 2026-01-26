@@ -242,10 +242,16 @@ class MainWindow(QMainWindow):
         help_menu.addAction(shortcuts_action)
     
     def show_about_dialog(self): 
-        """Display an About dialog with GitHub and contact information."""
+        """Display an About dialog with styled, clickable links."""
+        link_color = "#4da6ff" 
+        
         QMessageBox.about(self, "About Me",
-                                "Contact: Krzysztof.Wasik2002@gmail.com\n\n" \
-                                "GitHub: github.com/KrzysztofW02/MouseTasker\n")
+            f"Creator: <a href='https://krzysztofwasik.com' style='color: {link_color};'>KrzysztofWasik.com</a><br><br>"
+            
+            f"Contact: <a href='mailto:kontakt@krzysztofwasik.com' style='color: {link_color};'>kontakt@krzysztofwasik.com</a><br><br>"
+            
+            f"GitHub: <a href='https://github.com/KrzysztofW02/' style='color: {link_color};'>github.com/KrzysztofW02/</a>"
+        )
 
     def add_move(self):
         """Open MoveDialog and insert a MouseMove action if accepted."""
